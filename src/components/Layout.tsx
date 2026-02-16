@@ -14,6 +14,8 @@ import {
   X,
   ChevronRight,
   BadgeDollarSign,
+  GitCompareArrows,
+  Plus,
 } from "lucide-react";
 
 const navSections = [
@@ -21,6 +23,7 @@ const navSections = [
     label: "Marketplace",
     items: [
       { path: "/", icon: Search, label: "Discover" },
+      { path: "/compare", icon: GitCompareArrows, label: "Compare" },
       { path: "/favorites", icon: Heart, label: "Favorites" },
       { path: "/alerts", icon: Bell, label: "Alerts" },
     ],
@@ -30,6 +33,7 @@ const navSections = [
     items: [
       { path: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
       { path: "/agent/listings", icon: Building2, label: "My Listings" },
+      { path: "/agent/create", icon: Plus, label: "New Listing" },
       { path: "/agent/crm", icon: Users, label: "CRM" },
       { path: "/agent/messages", icon: MessageSquare, label: "Messages" },
       { path: "/agent/offers", icon: BadgeDollarSign, label: "Offers" },
