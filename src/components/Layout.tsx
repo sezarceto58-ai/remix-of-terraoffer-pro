@@ -16,46 +16,98 @@ import {
   BadgeDollarSign,
   GitCompareArrows,
   Plus,
+  Eye,
+  BarChart3,
+  ShoppingBag,
+  Store,
+  ChevronDown,
 } from "lucide-react";
 
-const navSections = [
+type AccountType = "buyer" | "seller" | "admin";
+
+const buyerNav = [
+  {
+    label: "Home",
+    items: [
+      { path: "/buyer", icon: LayoutDashboard, label: "Dashboard" },
+    ],
+  },
   {
     label: "Marketplace",
     items: [
-      { path: "/", icon: Search, label: "Discover" },
-      { path: "/compare", icon: GitCompareArrows, label: "Compare" },
-      { path: "/favorites", icon: Heart, label: "Favorites" },
-      { path: "/alerts", icon: Bell, label: "Alerts" },
+      { path: "/buyer/discover", icon: Search, label: "Discover" },
+      { path: "/buyer/compare", icon: GitCompareArrows, label: "Compare" },
+      { path: "/buyer/favorites", icon: Heart, label: "Favorites" },
+      { path: "/buyer/alerts", icon: Bell, label: "Alerts" },
     ],
   },
   {
-    label: "Agent OS",
+    label: "Offers & Deals",
     items: [
-      { path: "/agent/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-      { path: "/agent/listings", icon: Building2, label: "My Listings" },
-      { path: "/agent/create", icon: Plus, label: "New Listing" },
-      { path: "/agent/crm", icon: Users, label: "CRM" },
-      { path: "/agent/messages", icon: MessageSquare, label: "Messages" },
-      { path: "/agent/offers", icon: BadgeDollarSign, label: "Offers" },
+      { path: "/buyer/offers", icon: BadgeDollarSign, label: "My Offers" },
+      { path: "/buyer/messages", icon: MessageSquare, label: "Messages" },
     ],
   },
   {
-    label: "Investor",
+    label: "Investor Tools",
     items: [
-      { path: "/investor", icon: TrendingUp, label: "Portfolio" },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
-      { path: "/admin", icon: Shield, label: "Governance" },
+      { path: "/buyer/investor", icon: TrendingUp, label: "Portfolio" },
     ],
   },
 ];
 
+const sellerNav = [
+  {
+    label: "Home",
+    items: [
+      { path: "/seller", icon: LayoutDashboard, label: "Dashboard" },
+    ],
+  },
+  {
+    label: "Listings",
+    items: [
+      { path: "/seller/listings", icon: Building2, label: "My Listings" },
+      { path: "/seller/create", icon: Plus, label: "New Listing" },
+    ],
+  },
+  {
+    label: "Sales Pipeline",
+    items: [
+      { path: "/seller/offers", icon: BadgeDollarSign, label: "Offer Inbox" },
+      { path: "/seller/crm", icon: Users, label: "CRM & Leads" },
+      { path: "/seller/messages", icon: MessageSquare, label: "Messages" },
+    ],
+  },
+  {
+    label: "Performance",
+    items: [
+      { path: "/seller/analytics", icon: BarChart3, label: "Analytics" },
+    ],
+  },
+];
+
+const adminNav = [
+  {
+    label: "Governance",
+    items: [
+      { path: "/admin", icon: Shield, label: "Console" },
+    ],
+  },
+];
+
+const accountConfig: Record<AccountType, { nav: typeof buyerNav; label: string; icon: typeof ShoppingBag; color: string }> = {
+  buyer: { nav: buyerNav, label: "Buyer", icon: ShoppingBag, color: "bg-info/10 text-info" },
+  seller: { nav: sellerNav, label: "Seller", icon: Store, color: "bg-success/10 text-success" },
+  admin: { nav: adminNav, label: "Admin", icon: Shield, color: "bg-destructive/10 text-destructive" },
+};
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [accountType, setAccountType] = useState<AccountType>("buyer");
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
   const location = useLocation();
+
+  const config = accountConfig[accountType];
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -74,7 +126,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }`}
       >
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to={accountType === "buyer" ? "/buyer" : accountType === "seller" ? "/seller" : "/admin"} className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-gold flex items-center justify-center">
               <Building2 className="w-4 h-4 text-primary-foreground" />
             </div>
@@ -85,8 +137,55 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        <nav className="p-3 space-y-6 overflow-y-auto h-[calc(100vh-65px)]">
-          {navSections.map((section) => (
+        {/* Account Switcher */}
+        <div className="p-3 border-b border-sidebar-border">
+          <div className="relative">
+            <button
+              onClick={() => setShowAccountMenu(!showAccountMenu)}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`p-1.5 rounded-md ${config.color}`}>
+                  <config.icon className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold">{config.label} Account</p>
+                  <p className="text-xs text-muted-foreground">Switch account type</p>
+                </div>
+              </div>
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showAccountMenu ? "rotate-180" : ""}`} />
+            </button>
+
+            {showAccountMenu && (
+              <div className="absolute left-0 right-0 mt-1 rounded-lg bg-card border border-border shadow-elevated z-10 overflow-hidden">
+                {(["buyer", "seller", "admin"] as AccountType[]).map((type) => {
+                  const c = accountConfig[type];
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        setAccountType(type);
+                        setShowAccountMenu(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left hover:bg-secondary transition-colors ${
+                        accountType === type ? "bg-secondary" : ""
+                      }`}
+                    >
+                      <div className={`p-1.5 rounded-md ${c.color}`}>
+                        <c.icon className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground">{c.label}</span>
+                      {accountType === type && <ChevronRight className="w-3 h-3 ml-auto text-primary" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <nav className="p-3 space-y-6 overflow-y-auto h-[calc(100vh-160px)]">
+          {config.nav.map((section) => (
             <div key={section.label}>
               <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
                 {section.label}
@@ -126,6 +225,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
+            <span className={`px-2 py-0.5 rounded-md text-xs font-semibold uppercase ${config.color}`}>
+              {config.label}
+            </span>
             <button className="relative p-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors">
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse-gold" />
