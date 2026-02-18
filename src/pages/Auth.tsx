@@ -5,6 +5,7 @@ import { Building2, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Auth() {
@@ -15,6 +16,7 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [role, setRole] = useState<"buyer" | "seller">("buyer");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -50,7 +52,7 @@ export default function Auth() {
       email,
       password,
       options: {
-        data: { display_name: displayName },
+        data: { display_name: displayName, role },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -96,20 +98,36 @@ export default function Auth() {
 
           <form onSubmit={tab === "login" ? handleLogin : handleSignup} className="space-y-4">
             {tab === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    placeholder="Your name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    className="pl-10"
-                    required
-                  />
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      placeholder="Your name"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="space-y-3">
+                  <Label>I want to</Label>
+                  <RadioGroup value={role} onValueChange={(v) => setRole(v as "buyer" | "seller")} className="flex gap-4">
+                    <label htmlFor="role-buyer" className={`flex-1 flex items-center gap-2 rounded-lg border p-3 cursor-pointer transition-colors ${role === "buyer" ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <RadioGroupItem value="buyer" id="role-buyer" />
+                      <span className="text-sm font-medium">Buy Property</span>
+                    </label>
+                    <label htmlFor="role-seller" className={`flex-1 flex items-center gap-2 rounded-lg border p-3 cursor-pointer transition-colors ${role === "seller" ? "border-primary bg-primary/5" : "border-border"}`}>
+                      <RadioGroupItem value="seller" id="role-seller" />
+                      <span className="text-sm font-medium">Sell Property</span>
+                    </label>
+                  </RadioGroup>
+                </div>
+              </>
             )}
 
             <div className="space-y-2">
