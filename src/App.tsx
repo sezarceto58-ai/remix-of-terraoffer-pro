@@ -5,6 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 
+// Public pages
+import Landing from "@/pages/Landing";
+import Auth from "@/pages/Auth";
+
 // Buyer pages
 import BuyerDashboard from "@/pages/BuyerDashboard";
 import BuyerOffers from "@/pages/BuyerOffers";
@@ -36,37 +40,53 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout>
-          <Routes>
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/buyer" replace />} />
+        <Routes>
+          {/* Public routes (no layout) */}
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<Auth />} />
 
-            {/* Buyer routes */}
-            <Route path="/buyer" element={<BuyerDashboard />} />
-            <Route path="/buyer/discover" element={<Marketplace />} />
-            <Route path="/buyer/compare" element={<CompareListings />} />
-            <Route path="/buyer/favorites" element={<BuyerFavorites />} />
-            <Route path="/buyer/alerts" element={<Alerts />} />
-            <Route path="/buyer/offers" element={<BuyerOffers />} />
-            <Route path="/buyer/messages" element={<Messaging />} />
-            <Route path="/buyer/investor" element={<InvestorTools />} />
-            <Route path="/property/:id" element={<PropertyDetail />} />
+          {/* Protected routes with layout */}
+          <Route
+            path="/buyer/*"
+            element={
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<BuyerDashboard />} />
+                  <Route path="/discover" element={<Marketplace />} />
+                  <Route path="/compare" element={<CompareListings />} />
+                  <Route path="/favorites" element={<BuyerFavorites />} />
+                  <Route path="/alerts" element={<Alerts />} />
+                  <Route path="/offers" element={<BuyerOffers />} />
+                  <Route path="/messages" element={<Messaging />} />
+                  <Route path="/investor" element={<InvestorTools />} />
+                </Routes>
+              </Layout>
+            }
+          />
 
-            {/* Seller routes */}
-            <Route path="/seller" element={<SellerDashboard />} />
-            <Route path="/seller/listings" element={<SellerListings />} />
-            <Route path="/seller/create" element={<CreateProperty />} />
-            <Route path="/seller/offers" element={<SellerOffers />} />
-            <Route path="/seller/crm" element={<AgentCRM />} />
-            <Route path="/seller/messages" element={<Messaging />} />
-            <Route path="/seller/analytics" element={<SellerAnalytics />} />
+          <Route path="/property/:id" element={<Layout><PropertyDetail /></Layout>} />
 
-            {/* Admin */}
-            <Route path="/admin" element={<AdminDashboard />} />
+          <Route
+            path="/seller/*"
+            element={
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<SellerDashboard />} />
+                  <Route path="/listings" element={<SellerListings />} />
+                  <Route path="/create" element={<CreateProperty />} />
+                  <Route path="/offers" element={<SellerOffers />} />
+                  <Route path="/crm" element={<AgentCRM />} />
+                  <Route path="/messages" element={<Messaging />} />
+                  <Route path="/analytics" element={<SellerAnalytics />} />
+                </Routes>
+              </Layout>
+            }
+          />
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Layout>
+          <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
