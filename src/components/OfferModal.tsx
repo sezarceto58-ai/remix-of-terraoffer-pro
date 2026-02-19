@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { X, Upload, DollarSign } from "lucide-react";
+import { X, Upload, DollarSign, Check } from "lucide-react";
 import type { Property } from "@/data/mockData";
+import { useToast } from "@/hooks/use-toast";
 
 interface OfferModalProps {
   property: Property;
@@ -8,6 +9,7 @@ interface OfferModalProps {
 }
 
 export default function OfferModal({ property, onClose }: OfferModalProps) {
+  const { toast } = useToast();
   const [offerPrice, setOfferPrice] = useState(property.price.toString());
   const [currency, setCurrency] = useState<"USD" | "IQD">("USD");
   const [offerType, setOfferType] = useState<"BUY" | "RENT">("BUY");
@@ -16,6 +18,37 @@ export default function OfferModal({ property, onClose }: OfferModalProps) {
   const [message, setMessage] = useState("");
   const [addDeposit, setAddDeposit] = useState(false);
   const [depositPercent, setDepositPercent] = useState("10");
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = () => {
+    if (!offerPrice || Number(offerPrice) <= 0) {
+      toast({ title: "Invalid price", description: "Please enter a valid offer price.", variant: "destructive" });
+      return;
+    }
+    setSubmitted(true);
+    toast({
+      title: "Offer submitted!",
+      description: `Your offer of $${Number(offerPrice).toLocaleString()} on ${property.title} has been sent to the seller.`,
+    });
+    setTimeout(onClose, 2000);
+  };
+
+  if (submitted) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full max-w-sm rounded-2xl bg-card border border-border shadow-elevated p-8 animate-scale-in text-center">
+          <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
+            <Check className="w-8 h-8 text-success" />
+          </div>
+          <h2 className="text-xl font-display font-bold text-foreground">Offer Sent!</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            Your offer of ${Number(offerPrice).toLocaleString()} has been submitted. The seller will be notified.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -159,7 +192,10 @@ export default function OfferModal({ property, onClose }: OfferModalProps) {
           </div>
 
           {/* Submit */}
-          <button className="w-full py-3 rounded-xl bg-gradient-gold text-primary-foreground font-semibold text-sm shadow-gold hover:opacity-90 transition-opacity">
+          <button
+            onClick={handleSubmit}
+            className="w-full py-3 rounded-xl bg-gradient-gold text-primary-foreground font-semibold text-sm shadow-gold hover:opacity-90 transition-opacity"
+          >
             Submit Offer
           </button>
         </div>
