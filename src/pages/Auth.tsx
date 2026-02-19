@@ -22,15 +22,26 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const redirectByRole = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .limit(1)
+      .single();
+    const role = data?.role ?? "buyer";
+    navigate(role === "seller" ? "/seller" : role === "admin" ? "/admin" : "/buyer");
+  };
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        navigate("/buyer");
+        redirectByRole(session.user.id);
       }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/buyer");
+      if (session) redirectByRole(session.user.id);
     });
 
     return () => subscription.unsubscribe();
