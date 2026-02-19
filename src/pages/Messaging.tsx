@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageSquare, Send, Circle, Check, CheckCheck, Search } from "lucide-react";
+import { MessageSquare, Send, Check, CheckCheck, Search } from "lucide-react";
 
 interface Message {
   id: string;
@@ -20,7 +20,7 @@ interface Conversation {
   messages: Message[];
 }
 
-const mockConversations: Conversation[] = [
+const initialConversations: Conversation[] = [
   {
     id: "conv-1",
     contactName: "Karwan Mohammed",
@@ -66,15 +66,49 @@ const mockConversations: Conversation[] = [
 ];
 
 export default function Messaging() {
-  const [activeConv, setActiveConv] = useState(mockConversations[0].id);
+  const [conversations, setConversations] = useState(initialConversations);
+  const [activeConv, setActiveConv] = useState(conversations[0].id);
   const [newMessage, setNewMessage] = useState("");
   const [search, setSearch] = useState("");
 
-  const active = mockConversations.find((c) => c.id === activeConv)!;
-  const filtered = mockConversations.filter(
+  const active = conversations.find((c) => c.id === activeConv)!;
+  const filtered = conversations.filter(
     (c) => c.contactName.toLowerCase().includes(search.toLowerCase()) ||
            c.propertyTitle.toLowerCase().includes(search.toLowerCase())
   );
+
+  const sendMessage = () => {
+    if (!newMessage.trim()) return;
+    const now = new Date();
+    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const msg: Message = {
+      id: `m-${Date.now()}`,
+      sender: "me",
+      text: newMessage.trim(),
+      time,
+      read: false,
+    };
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === activeConv
+          ? { ...c, messages: [...c.messages, msg], lastMessage: msg.text, lastTime: "Just now" }
+          : c
+      )
+    );
+    setNewMessage("");
+  };
+
+  const selectConversation = (id: string) => {
+    setActiveConv(id);
+    // Mark messages as read
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, unread: 0, messages: c.messages.map((m) => ({ ...m, read: true })) }
+          : c
+      )
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -103,7 +137,7 @@ export default function Messaging() {
             {filtered.map((conv) => (
               <button
                 key={conv.id}
-                onClick={() => setActiveConv(conv.id)}
+                onClick={() => selectConversation(conv.id)}
                 className={`w-full text-left p-4 border-b border-border transition-colors ${
                   activeConv === conv.id ? "bg-primary/5" : "hover:bg-secondary/50"
                 }`}
@@ -133,7 +167,6 @@ export default function Messaging() {
 
         {/* Chat area */}
         <div className="lg:col-span-2 rounded-xl bg-card border border-border overflow-hidden flex flex-col">
-          {/* Chat header */}
           <div className="p-4 border-b border-border flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-gold flex items-center justify-center text-xs font-bold text-primary-foreground">
               {active.avatar}
@@ -144,7 +177,6 @@ export default function Messaging() {
             </div>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {active.messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}>
@@ -169,7 +201,6 @@ export default function Messaging() {
             ))}
           </div>
 
-          {/* Input */}
           <div className="p-4 border-t border-border">
             <div className="flex gap-2">
               <input
@@ -177,9 +208,17 @@ export default function Messaging() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type a message..."
                 className="flex-1 px-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
-                onKeyDown={(e) => e.key === "Enter" && setNewMessage("")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
               />
-              <button className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+              <button
+                onClick={sendMessage}
+                className="p-2.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
                 <Send className="w-4 h-4" />
               </button>
             </div>

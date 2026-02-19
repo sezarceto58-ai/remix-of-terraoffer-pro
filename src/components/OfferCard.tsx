@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { BadgeCheck, Clock, FileText } from "lucide-react";
 import type { Offer } from "@/data/mockData";
+import { useToast } from "@/hooks/use-toast";
 
 function PlanBadge({ plan }: { plan: Offer["buyerPlan"] }) {
   const styles = {
@@ -42,8 +44,24 @@ function StatusBadge({ status }: { status: Offer["status"] }) {
   );
 }
 
-export default function OfferCard({ offer, showActions = false }: { offer: Offer; showActions?: boolean }) {
+export default function OfferCard({ offer, showActions = false, onStatusChange }: { 
+  offer: Offer; 
+  showActions?: boolean;
+  onStatusChange?: (offerId: string, newStatus: Offer["status"]) => void;
+}) {
+  const { toast } = useToast();
+  const [localStatus, setLocalStatus] = useState(offer.status);
   const pricePercent = Math.round((offer.offerPrice / offer.askingPrice) * 100);
+
+  const handleAction = (action: "ACCEPTED" | "COUNTERED" | "REJECTED") => {
+    setLocalStatus(action);
+    onStatusChange?.(offer.id, action);
+    const labels = { ACCEPTED: "accepted", COUNTERED: "countered", REJECTED: "rejected" };
+    toast({
+      title: `Offer ${labels[action]}`,
+      description: `${offer.buyerName}'s offer on ${offer.propertyTitle} has been ${labels[action]}.`,
+    });
+  };
 
   return (
     <div className="rounded-xl bg-card border border-border p-5 shadow-card animate-fade-in hover:border-primary/20 transition-colors">
@@ -51,7 +69,7 @@ export default function OfferCard({ offer, showActions = false }: { offer: Offer
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs text-muted-foreground font-mono">{offer.id}</span>
-            <StatusBadge status={offer.status} />
+            <StatusBadge status={localStatus} />
           </div>
           <h3 className="font-semibold text-foreground">{offer.propertyTitle}</h3>
         </div>
@@ -100,15 +118,29 @@ export default function OfferCard({ offer, showActions = false }: { offer: Offer
         </p>
       )}
 
-      {showActions && offer.status === "SUBMITTED" && (
+      {showActions && localStatus === "SUBMITTED" && (
         <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-          <button className="flex-1 py-2 rounded-lg bg-success/10 text-success text-sm font-medium hover:bg-success/20 transition-colors">
+          <button onClick={() => handleAction("ACCEPTED")} className="flex-1 py-2 rounded-lg bg-success/10 text-success text-sm font-medium hover:bg-success/20 transition-colors">
             Accept
           </button>
-          <button className="flex-1 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
+          <button onClick={() => handleAction("COUNTERED")} className="flex-1 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
             Counter
           </button>
-          <button className="flex-1 py-2 rounded-lg bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors">
+          <button onClick={() => handleAction("REJECTED")} className="flex-1 py-2 rounded-lg bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors">
+            Reject
+          </button>
+        </div>
+      )}
+
+      {showActions && localStatus === "VIEWED" && (
+        <div className="flex gap-2 mt-4 pt-4 border-t border-border">
+          <button onClick={() => handleAction("ACCEPTED")} className="flex-1 py-2 rounded-lg bg-success/10 text-success text-sm font-medium hover:bg-success/20 transition-colors">
+            Accept
+          </button>
+          <button onClick={() => handleAction("COUNTERED")} className="flex-1 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors">
+            Counter
+          </button>
+          <button onClick={() => handleAction("REJECTED")} className="flex-1 py-2 rounded-lg bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors">
             Reject
           </button>
         </div>
