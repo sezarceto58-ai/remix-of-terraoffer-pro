@@ -8,6 +8,7 @@ import Layout from "@/components/Layout";
 // Public pages
 import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
+import ResetPassword from "@/pages/ResetPassword";
 
 // Buyer pages
 import BuyerDashboard from "@/pages/BuyerDashboard";
@@ -30,6 +31,8 @@ import AgentCRM from "@/pages/AgentCRM";
 // Shared pages
 import Messaging from "@/pages/Messaging";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Settings from "@/pages/Settings";
+import Pricing from "@/pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,7 +47,7 @@ const App = () => (
           {/* Public routes (no layout) */}
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
-
+          <Route path="/reset-password" element={<ResetPassword />} />
           {/* Protected routes with layout */}
           <Route
             path="/buyer/*"
@@ -84,6 +87,8 @@ const App = () => (
           />
 
           <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
+          <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

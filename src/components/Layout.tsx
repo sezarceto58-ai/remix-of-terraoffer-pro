@@ -17,8 +17,10 @@ import {
   GitCompareArrows,
   Plus,
   BarChart3,
-  LogOut } from
-"lucide-react";
+  LogOut,
+  Settings,
+  CreditCard,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const buyerNav = [
@@ -139,7 +141,7 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </button>
         </div>
 
-        <nav className="p-3 space-y-6 overflow-y-auto h-[calc(100vh-130px)]">
+        <nav className="p-3 space-y-6 overflow-y-auto h-[calc(100vh-200px)]">
           {nav.map((section) =>
           <div key={section.label}>
               <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
@@ -170,12 +172,28 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           )}
         </nav>
 
-        {/* Sign out */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border">
+        {/* Account links */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border space-y-0.5">
+          <Link
+            to="/pricing"
+            onClick={() => setSidebarOpen(false)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <CreditCard className="w-4 h-4" />
+            Plans & Pricing
+          </Link>
+          <Link
+            to="/settings"
+            onClick={() => setSidebarOpen(false)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </Link>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors">
-
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             Sign Out
           </button>
