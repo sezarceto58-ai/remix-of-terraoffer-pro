@@ -49,7 +49,7 @@ const buyerNav = [
 {
   label: "Investor Tools",
   items: [
-  { path: "/buyer/investor", icon: TrendingUp, label: "Portfolio" }]
+  { path: "/buyer/investor", icon: TrendingUp, label: "AI Intelligence" }]
 
 }];
 
