@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, TrendingDown, Home, Star, Check, Trash2 } from "lucide-react";
 
 interface Alert {
@@ -7,16 +8,17 @@ interface Alert {
   title: string;
   description: string;
   propertyTitle?: string;
+  propertyId?: string;
   time: string;
   read: boolean;
 }
 
 const mockAlerts: Alert[] = [
-  { id: "A1", type: "price_drop", title: "Price Drop Alert", description: "Luxury Villa with Pool dropped from $340K to $320K — 5.9% decrease.", propertyTitle: "Luxury Villa with Pool", time: "2 hours ago", read: false },
-  { id: "A2", type: "new_match", title: "New Match Found", description: "A new 3BR apartment in Mansour matches your search criteria.", propertyTitle: "Modern Apartment - City Center", time: "5 hours ago", read: false },
-  { id: "A3", type: "offer_update", title: "Offer Accepted!", description: "Your offer on Penthouse - Panoramic Views has been accepted by the seller.", propertyTitle: "Penthouse - Panoramic Views", time: "1 day ago", read: false },
+  { id: "A1", type: "price_drop", title: "Price Drop Alert", description: "Luxury Villa with Pool dropped from $340K to $320K — 5.9% decrease.", propertyTitle: "Luxury Villa with Pool", propertyId: "1", time: "2 hours ago", read: false },
+  { id: "A2", type: "new_match", title: "New Match Found", description: "A new 3BR apartment in Mansour matches your search criteria.", propertyTitle: "Modern Apartment - City Center", propertyId: "2", time: "5 hours ago", read: false },
+  { id: "A3", type: "offer_update", title: "Offer Accepted!", description: "Your offer on Penthouse - Panoramic Views has been accepted by the seller.", propertyTitle: "Penthouse - Panoramic Views", propertyId: "4", time: "1 day ago", read: false },
   { id: "A4", type: "verification", title: "Agent Verified", description: "Ahmed Al-Kurdi has been verified as a licensed agent.", time: "2 days ago", read: true },
-  { id: "A5", type: "price_drop", title: "Price Drop Alert", description: "Commercial Tower Office reduced by $25K. Now at $450K.", propertyTitle: "Commercial Tower Office", time: "3 days ago", read: true },
+  { id: "A5", type: "price_drop", title: "Price Drop Alert", description: "Commercial Tower Office reduced by $25K. Now at $450K.", propertyTitle: "Commercial Tower Office", propertyId: "3", time: "3 days ago", read: true },
   { id: "A6", type: "new_match", title: "New Listing", description: "New villa in Dream City, Erbil — $295K. Matches your saved search.", time: "4 days ago", read: true },
 ];
 
@@ -37,6 +39,7 @@ const typeColors: Record<Alert["type"], string> = {
 export default function Alerts() {
   const [alerts, setAlerts] = useState(mockAlerts);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const navigate = useNavigate();
 
   const filtered = filter === "unread" ? alerts.filter((a) => !a.read) : alerts;
   const unreadCount = alerts.filter((a) => !a.read).length;
@@ -48,6 +51,13 @@ export default function Alerts() {
 
   const deleteAlert = (id: string) =>
     setAlerts(alerts.filter((a) => a.id !== id));
+
+  const handleAlertClick = (alert: Alert) => {
+    markRead(alert.id);
+    if (alert.propertyId) {
+      navigate(`/property/${alert.propertyId}`);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -101,7 +111,8 @@ export default function Alerts() {
             return (
               <div
                 key={alert.id}
-                className={`rounded-xl border p-4 flex items-start gap-4 animate-fade-in transition-colors ${
+                onClick={() => handleAlertClick(alert)}
+                className={`rounded-xl border p-4 flex items-start gap-4 animate-fade-in transition-colors cursor-pointer hover:border-primary/30 ${
                   alert.read
                     ? "bg-card border-border"
                     : "bg-primary/[0.03] border-primary/20"
@@ -118,9 +129,12 @@ export default function Alerts() {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{alert.description}</p>
+                  {alert.propertyTitle && (
+                    <p className="text-xs text-primary mt-1 font-medium">→ {alert.propertyTitle}</p>
+                  )}
                   <p className="text-xs text-muted-foreground/60 mt-1">{alert.time}</p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   {!alert.read && (
                     <button
                       onClick={() => markRead(alert.id)}
