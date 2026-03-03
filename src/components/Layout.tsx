@@ -20,6 +20,7 @@ import {
   LogOut,
   Settings,
   CreditCard,
+  Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -93,6 +94,12 @@ const developerNav = [
   label: "Home",
   items: [
   { path: "/developer", icon: LayoutDashboard, label: "Dashboard" }]
+},
+{
+  label: "Opportunities",
+  items: [
+  { path: "/developer/opportunities", icon: Briefcase, label: "Opportunity Feed" },
+  { path: "/developer/portfolio", icon: TrendingUp, label: "Portfolio Insights" }]
 },
 {
   label: "Planning",
