@@ -84,7 +84,7 @@ function ProfileTab({ user, toast }: any) {
     });
 
     if (user) {
-      await supabase.from("profiles").update({ display_name: displayName, phone }).eq("user_id", user.id);
+      await (supabase as any).from("profiles").update({ display_name: displayName, phone }).eq("user_id", user.id);
     }
 
     setSaving(false);

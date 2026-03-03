@@ -190,6 +190,19 @@ export default function PropertyDetail() {
               </div>
             </div>
           </div>
+
+          <div className="rounded-xl bg-card border border-border p-5">
+            <h3 className="font-semibold text-foreground mb-2">AI Analysis Results</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Open full AI investment analysis in a dedicated page for deeper insights.
+            </p>
+            <button
+              onClick={() => navigate(`/buyer/analysis/${property.id}`)}
+              className="w-full py-3 rounded-xl bg-gradient-gold text-primary-foreground font-semibold text-sm shadow-gold hover:opacity-90 transition-opacity"
+            >
+              Open AI Analysis Page
+            </button>
+          </div>
         </div>
       </div>
 
