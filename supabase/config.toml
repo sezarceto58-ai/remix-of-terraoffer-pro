@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.planner-plans]
 verify_jwt = false
+
+[functions.opportunity-ai]
+verify_jwt = false
