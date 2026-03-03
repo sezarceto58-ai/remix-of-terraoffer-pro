@@ -41,6 +41,48 @@ Return JSON with:
 }`;
         break;
 
+      case "listing_assist":
+        systemPrompt = `You are TerraVista AI, a premium real estate listing assistant for the Iraqi market. Help sellers create compelling, professional property listings with AI-powered insights. Return ONLY valid JSON.`;
+        userPrompt = `Create a professional listing and analysis for this property:
+${JSON.stringify(property)}
+
+Return JSON:
+{
+  "listing": {
+    "title": "compelling property title",
+    "titleAr": "Arabic title",
+    "description": "detailed 3-4 paragraph description highlighting key features, location benefits, investment potential",
+    "descriptionAr": "Arabic description",
+    "highlights": ["5-7 key selling points"],
+    "targetBuyer": "description of ideal buyer profile"
+  },
+  "pricing": {
+    "recommendedPrice": 0,
+    "priceRange": { "min": 0, "max": 0 },
+    "pricePerSqm": 0,
+    "marketComparison": "above|at|below market",
+    "reasoning": "why this price range"
+  },
+  "marketTrends": {
+    "areaGrowth": "X%",
+    "demandLevel": "high|medium|low",
+    "avgDaysOnMarket": 0,
+    "forecast": "6-12 month prediction",
+    "comparables": "summary of comparable properties"
+  },
+  "swot": { "strengths": ["..."], "weaknesses": ["..."], "opportunities": ["..."], "threats": ["..."] },
+  "investmentScore": { "overall": 0-100, "location": 0-100, "value": 0-100, "growth": 0-100, "risk": 0-100, "liquidity": 0-100 },
+  "financials": {
+    "estimatedROI": "X%", "capRate": "X%", "cashOnCash": "X%",
+    "noi": 0, "breakEvenYears": 0, "volatility": "low|medium|high"
+  },
+  "risk": { "overallScore": 0-100, "level": "low|medium|high", "factors": [{ "name": "...", "score": 0-100, "impact": "..." }] },
+  "demographics": { "population": "...", "medianIncome": "...", "employmentRate": "...", "growthRate": "..." },
+  "esg": { "score": 0-100, "environmental": 0-100, "social": 0-100, "governance": 0-100, "notes": "..." },
+  "tips": ["3-5 tips to improve listing performance"]
+}`;
+        break;
+
       case "smart_search":
         systemPrompt = `You are TerraVista AI, a smart property search assistant for the Iraqi real estate market. Help users find properties matching their criteria. Return structured recommendations in JSON format. Return ONLY valid JSON.`;
         userPrompt = `User investment criteria: ${JSON.stringify(criteria)}
@@ -109,7 +151,6 @@ Return JSON:
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
     
-    // Try to parse JSON from the response
     let parsed;
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
