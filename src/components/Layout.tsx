@@ -65,7 +65,7 @@ const sellerNav = [
   label: "Listings",
   items: [
   { path: "/seller/listings", icon: Building2, label: "My Listings" },
-  { path: "/seller/create", icon: Plus, label: "New Listing" }]
+  { path: "/seller/create", icon: Plus, label: "New Listing + AI" }]
 
 },
 {
@@ -80,9 +80,31 @@ const sellerNav = [
   label: "Performance",
   items: [
   { path: "/seller/analytics", icon: BarChart3, label: "Analytics" }]
-
+},
+{
+  label: "AI Tools",
+  items: [
+  { path: "/seller/investor", icon: TrendingUp, label: "Investor Intelligence" }]
 }];
 
+
+const developerNav = [
+{
+  label: "Home",
+  items: [
+  { path: "/developer", icon: LayoutDashboard, label: "Dashboard" }]
+},
+{
+  label: "Planning",
+  items: [
+  { path: "/developer/analyze", icon: Search, label: "Analyze Land" },
+  { path: "/developer/plans", icon: Building2, label: "All Plans" }]
+},
+{
+  label: "Tools",
+  items: [
+  { path: "/developer/messages", icon: MessageSquare, label: "Messages" }]
+}];
 
 const adminNav = [
 {
@@ -94,6 +116,7 @@ const adminNav = [
 
 
 function getNavForPath(pathname: string) {
+  if (pathname.startsWith("/developer")) return developerNav;
   if (pathname.startsWith("/seller")) return sellerNav;
   if (pathname.startsWith("/admin")) return adminNav;
   return buyerNav;
