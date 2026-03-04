@@ -25,7 +25,6 @@ serve(async (req) => {
     const { lat, lng, area_sqm, shape, max_floors, restrictions } = await req.json();
     if (!lat || !lng || !area_sqm) throw new Error("lat, lng, and area_sqm are required");
 
-    // Insert plan as processing
     const { data: plan, error: insertError } = await supabase
       .from("project_plans")
       .insert({
@@ -42,17 +41,153 @@ serve(async (req) => {
 
     if (insertError) throw insertError;
 
-    // Run AI analysis asynchronously (but in this edge function for simplicity)
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const prompt = `You are a real estate feasibility expert. Given the land data below, return ONLY valid JSON matching this exact schema:
+    const prompt = `You are a world-class real estate feasibility consultant. Given the land data below, produce a COMPREHENSIVE feasibility report. Return ONLY valid JSON matching this exact schema (no markdown, no explanation):
+
 {
-  "land_use": { "recommendation": "string", "confidence": 0.0-1.0, "rationale": "string" },
-  "design": { "floors": number, "units_per_floor": number, "unit_mix": {"80m2": count, "120m2": count}, "amenities": ["string"] },
-  "pricing": { "by_floor": [{ "floor": number, "price_per_unit": number }] },
-  "marketing": { "channels": ["string"], "timeline_months": number, "target_audience": "string", "offers": "string" },
-  "financials": { "total_cost": number, "projected_revenue": number, "roi_pct": number, "payback_years": number, "breakeven_units": number, "risk_range": [number, number] }
+  "land_use": {
+    "recommendation": "string - primary recommended use",
+    "confidence": 0.0-1.0,
+    "rationale": "string - detailed 3-4 paragraph explanation",
+    "strengths": ["string - 4-6 location strengths"],
+    "weaknesses": ["string - 3-5 location weaknesses"],
+    "neighborhood": {
+      "existing_activities": ["string - key activities/businesses nearby"],
+      "upcoming_projects": ["string - known/likely future developments"],
+      "infrastructure": ["string - roads, utilities, transit access"]
+    },
+    "zoning": {
+      "validation": "string - zoning assessment",
+      "allowed_uses": ["string"],
+      "restrictions_analysis": "string - analysis of given restrictions",
+      "recommendations": "string - how to work within zoning"
+    },
+    "development_recommendations": ["string - 4-6 strategic recommendations"],
+    "pricing_suggestions": "string - 2-3 paragraph pricing strategy",
+    "unit_mix_optimization": "string - detailed unit mix rationale"
+  },
+  "design": {
+    "buildings_count": number,
+    "building_shape": "string - L-shape, U-shape, tower, etc.",
+    "floors": number,
+    "units_per_floor": number,
+    "total_units": number,
+    "commercial_area_sqm": number,
+    "green_area_sqm": number,
+    "facilities": ["string - gym, pool, parking levels, etc."],
+    "unit_types": [
+      {
+        "name": "string - e.g. Studio, 1BR, 2BR, 3BR, Penthouse",
+        "area_sqm": number,
+        "count": number,
+        "bedrooms": number,
+        "bathrooms": number,
+        "balcony": "string - yes/no and size",
+        "kitchen": "string - open or separate",
+        "ceiling_height_m": number,
+        "rooms": ["string - living, dining, master bedroom, etc."]
+      }
+    ],
+    "parking_spaces": number,
+    "basement_levels": number,
+    "design_rationale": "string - why this design suits the area/city/country"
+  },
+  "pricing": {
+    "currency": "string - USD or local",
+    "price_per_sqm": number,
+    "price_per_sqft": number,
+    "by_unit_type": [
+      {
+        "type": "string",
+        "area_sqm": number,
+        "area_sqft": number,
+        "price_per_unit": number,
+        "price_per_sqm": number,
+        "price_per_sqft": number
+      }
+    ],
+    "by_floor": [{ "floor": number, "premium_pct": number, "price_per_sqm": number }],
+    "payment_plans": [
+      {
+        "name": "string",
+        "down_payment_pct": number,
+        "installments": number,
+        "duration_months": number,
+        "monthly_payment_example": number,
+        "description": "string"
+      }
+    ]
+  },
+  "marketing": {
+    "channels": ["string"],
+    "timeline_months": number,
+    "target_audience": "string",
+    "positioning": "string - market positioning statement",
+    "offers": [
+      {
+        "name": "string",
+        "description": "string",
+        "discount_pct": number,
+        "conditions": "string",
+        "feasibility": "string - why this offer works financially",
+        "expected_uptake_pct": number
+      }
+    ],
+    "launch_strategy": "string - phased launch plan",
+    "digital_strategy": "string",
+    "branding_suggestions": "string"
+  },
+  "feasibility": {
+    "total_construction_cost": number,
+    "land_cost_estimate": number,
+    "soft_costs": number,
+    "total_investment": number,
+    "projected_revenue": number,
+    "net_profit": number,
+    "roi_pct": number,
+    "irr_pct": number,
+    "cap_rate_pct": number,
+    "payback_years": number,
+    "breakeven_units": number,
+    "breakeven_months": number,
+    "cash_on_cash_return_pct": number,
+    "timeline": [
+      { "phase": "string", "start_month": number, "end_month": number, "cost": number, "description": "string" }
+    ],
+    "swot": {
+      "strengths": ["string"],
+      "weaknesses": ["string"],
+      "opportunities": ["string"],
+      "threats": ["string"]
+    },
+    "risk_assessment": [
+      { "risk": "string", "probability": "low|medium|high", "impact": "low|medium|high", "mitigation": "string" }
+    ],
+    "market_positioning": "string - 2 paragraph market position analysis",
+    "exit_strategies": [
+      { "strategy": "string", "timeline_years": number, "expected_return_pct": number, "description": "string" }
+    ],
+    "forecasting": {
+      "roi_5yr": number,
+      "roi_10yr": number,
+      "asset_growth_10yr_pct": number,
+      "rental_income_monthly": number,
+      "rental_yield_pct": number,
+      "resale_value_5yr": number,
+      "resale_value_10yr": number,
+      "scenarios": [
+        {
+          "name": "string - e.g. Interest Rate +2%, Price Drop 15%, Cost Overrun 20%",
+          "impact_on_roi_pct": number,
+          "impact_on_irr_pct": number,
+          "net_profit_change": number,
+          "description": "string"
+        }
+      ]
+    }
+  }
 }
 
 LAND DATA:
@@ -62,13 +197,16 @@ LAND DATA:
 - Max floors allowed: ${max_floors || 10}
 - Restrictions: ${JSON.stringify(restrictions || [])}
 
-Rules:
-- land_use.confidence must be 0–1
-- design.unit_mix keys are strings like "80m2"
-- pricing.by_floor must have an entry for every floor in design.floors
-- All numbers must be realistic for the given location
-- financials must be deterministic and realistic
-- Return ONLY the JSON object, no markdown, no explanation`;
+RULES:
+- All financial numbers must be realistic for the location's country and city
+- Design must be culturally appropriate for the region
+- Unit sizes, ceiling heights, and layouts must follow local market standards
+- Pricing must reflect actual market rates for the area
+- Include both USD and local currency where possible
+- Payment plans must be realistic for the market
+- SWOT must be specific to this exact location, not generic
+- Scenario testing must show realistic impacts
+- Return ONLY the JSON object`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -79,7 +217,7 @@ Rules:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are a real estate feasibility AI. Return only valid JSON." },
+          { role: "system", content: "You are a senior real estate feasibility consultant with 20+ years experience. Return only valid JSON." },
           { role: "user", content: prompt },
         ],
       }),
@@ -88,9 +226,7 @@ Rules:
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
       console.error("AI gateway error:", aiResponse.status, errText);
-      
       await supabase.from("project_plans").update({ status: "error" }).eq("id", plan.id);
-      
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "AI rate limit exceeded, try again later" }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -106,8 +242,7 @@ Rules:
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || "";
-    
-    // Parse JSON from response (strip markdown fences if present)
+
     let result;
     try {
       const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
@@ -118,28 +253,6 @@ Rules:
       throw new Error("AI returned invalid output");
     }
 
-    // Post-process financials deterministically
-    const floors = result.design?.floors || max_floors || 10;
-    const unitsPerFloor = result.design?.units_per_floor || 4;
-    const totalUnits = floors * unitsPerFloor;
-    const avgPrice = result.pricing?.by_floor?.length
-      ? result.pricing.by_floor.reduce((s: number, f: any) => s + (f.price_per_unit || 0), 0) / result.pricing.by_floor.length
-      : 500000;
-    const projRevenue = totalUnits * avgPrice;
-    const constructCost = area_sqm * 3500 * floors; // rough cost/m² per floor
-    const roi = constructCost > 0 ? ((projRevenue - constructCost) / constructCost) * 100 : 0;
-
-    result.financials = {
-      ...result.financials,
-      total_cost: Math.round(constructCost),
-      projected_revenue: Math.round(projRevenue),
-      roi_pct: Math.round(roi * 100) / 100,
-      payback_years: roi > 0 ? Math.round((constructCost / (projRevenue - constructCost)) * 10) / 10 : 0,
-      breakeven_units: Math.ceil(constructCost / avgPrice),
-      risk_range: result.financials?.risk_range || [roi * 0.7, roi * 1.3].map((v: number) => Math.round(v * 100) / 100),
-    };
-
-    // Save result
     await supabase.from("project_plans").update({ status: "complete", result }).eq("id", plan.id);
 
     return new Response(JSON.stringify({ plan_id: plan.id, status: "complete" }), {
