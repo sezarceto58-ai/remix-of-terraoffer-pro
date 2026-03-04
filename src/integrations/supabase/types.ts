@@ -258,6 +258,48 @@ export type Database = {
         }
         Relationships: []
       }
+      project_plans: {
+        Row: {
+          created_at: string
+          id: string
+          land_area: number | null
+          land_location: Json | null
+          max_floors: number | null
+          restrictions: string[] | null
+          result: Json | null
+          shape: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          land_area?: number | null
+          land_location?: Json | null
+          max_floors?: number | null
+          restrictions?: string[] | null
+          result?: Json | null
+          shape?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          land_area?: number | null
+          land_location?: Json | null
+          max_floors?: number | null
+          restrictions?: string[] | null
+          result?: Json | null
+          shape?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
