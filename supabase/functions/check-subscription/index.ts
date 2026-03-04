@@ -26,7 +26,13 @@ serve(async (req) => {
   try {
     logStep("Function started");
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    if (!stripeKey) {
+      logStep("STRIPE_SECRET_KEY not configured, returning free tier");
+      return new Response(JSON.stringify({ subscribed: false, product_id: null, price_id: null, subscription_end: null }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
