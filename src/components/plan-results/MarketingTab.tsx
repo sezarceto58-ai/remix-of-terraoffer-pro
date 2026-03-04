@@ -18,7 +18,7 @@ export default function MarketingTab({ r }: { r: any }) {
       </div>
 
       {/* Channels */}
-      {m.channels?.length > 0 && (
+      {Array.isArray(m.channels) && m.channels.length > 0 && (
         <div className="rounded-xl bg-card border border-border p-5 space-y-3">
           <h4 className="text-sm font-semibold text-foreground flex items-center gap-2"><Megaphone className="w-4 h-4" /> Channels</h4>
           <div className="flex flex-wrap gap-2">{m.channels.map((c: string) => (
@@ -36,7 +36,7 @@ export default function MarketingTab({ r }: { r: any }) {
       )}
 
       {/* Smart Offers */}
-      {m.offers?.length > 0 && (
+      {Array.isArray(m.offers) && m.offers.length > 0 && (
         <div className="rounded-xl bg-card border border-border p-5 space-y-4">
           <h4 className="text-sm font-semibold text-foreground flex items-center gap-2"><Rocket className="w-4 h-4" /> Smart Offers & Promotions</h4>
           <div className="space-y-3">
