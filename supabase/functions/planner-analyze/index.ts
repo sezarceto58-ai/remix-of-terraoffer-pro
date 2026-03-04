@@ -22,7 +22,11 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error("Unauthorized");
 
-    const { lat, lng, area_sqm, shape, max_floors, restrictions } = await req.json();
+    const {
+      lat, lng, area_sqm, land_price, shape, max_floors, restrictions,
+      street_type, sun_blockage, nearby_facilities, neighborhood_prices, neighborhood_projects,
+    } = await req.json();
+
     if (!lat || !lng || !area_sqm) throw new Error("lat, lng, and area_sqm are required");
 
     const { data: plan, error: insertError } = await supabase
@@ -43,6 +47,11 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // Build rich context section
+    const facilitiesText = (nearby_facilities && nearby_facilities.length > 0)
+      ? nearby_facilities.map((f: any) => `- ${f.type}: ${f.distance_km} km away`).join("\n")
+      : "No nearby facilities specified";
 
     const prompt = `You are a world-class real estate feasibility consultant. Given the land data below, produce a COMPREHENSIVE feasibility report. Return ONLY valid JSON matching this exact schema (no markdown, no explanation):
 
@@ -196,12 +205,29 @@ LAND DATA:
 - Shape: ${shape || "rectangle"}
 - Max floors allowed: ${max_floors || 10}
 - Restrictions: ${JSON.stringify(restrictions || [])}
+- Land purchase price: ${land_price ? `$${land_price.toLocaleString()}` : "Not specified — estimate based on location"}
+- Street type: ${street_type || "secondary"} (main road has higher commercial value, alley has less visibility)
+- Sun blockage from nearby buildings: ${sun_blockage || "none"}
 
-RULES:
+NEARBY FACILITIES:
+${facilitiesText}
+
+NEIGHBORHOOD MARKET PRICES (user-provided):
+${neighborhood_prices || "Not specified — use your knowledge of the area's market rates"}
+
+NEARBY PROJECTS & LAND USES (user-provided):
+${neighborhood_projects || "Not specified — infer from location"}
+
+CRITICAL PRICING RULES:
+- If user provided a land price, use it as "land_cost_estimate" in feasibility — do NOT invent a different number
+- Pricing must be DIRECTLY informed by the neighborhood prices the user provided
+- If neighboring apartments sell at $X/m², your project price should be in a logical range relative to that (premium or discount justified by quality/features)
+- Nearby facilities (hospitals, schools, malls) INCREASE land value — factor this into pricing
+- Main road frontage commands 15-40% premium over secondary streets
+- Sun blockage DECREASES desirability for residential upper floors — adjust pricing tiers accordingly
 - All financial numbers must be realistic for the location's country and city
 - Design must be culturally appropriate for the region
 - Unit sizes, ceiling heights, and layouts must follow local market standards
-- Pricing must reflect actual market rates for the area
 - Include both USD and local currency where possible
 - Payment plans must be realistic for the market
 - SWOT must be specific to this exact location, not generic
@@ -217,7 +243,7 @@ RULES:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are a senior real estate feasibility consultant with 20+ years experience. Return only valid JSON." },
+          { role: "system", content: "You are a senior real estate feasibility consultant with 20+ years experience in Middle East and global markets. You produce realistic, data-driven analysis. Return only valid JSON." },
           { role: "user", content: prompt },
         ],
       }),
