@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Heart, Trash2, Bell } from "lucide-react";
 import PropertyCard from "@/components/PropertyCard";
 import { mockProperties } from "@/data/mockData";
+import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 
 export default function BuyerFavorites() {
@@ -68,11 +69,13 @@ export default function BuyerFavorites() {
       </div>
 
       {favorites.length === 0 ? (
-        <div className="text-center py-20 rounded-xl bg-card border border-border">
-          <Heart className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
-          <p className="text-muted-foreground">No saved properties yet.</p>
-          <p className="text-sm text-muted-foreground/60 mt-1">Browse the marketplace and save properties you like.</p>
-        </div>
+        <EmptyState
+          icon={Heart}
+          title="No saved properties yet"
+          description="Start exploring the marketplace and save properties you love."
+          actionLabel="Discover Properties"
+          onAction={() => window.location.href = "/buyer/discover"}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {favorites.map((property) => (

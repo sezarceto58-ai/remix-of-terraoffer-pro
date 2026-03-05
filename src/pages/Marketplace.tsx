@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Search, SlidersHorizontal, MapPin } from "lucide-react";
 import PropertyCard from "@/components/PropertyCard";
+import PropertyCardSkeleton from "@/components/skeletons/PropertyCardSkeleton";
+import EmptyState from "@/components/EmptyState";
 import { mockProperties } from "@/data/mockData";
 import heroImg from "@/assets/hero-property.jpg";
 
@@ -85,16 +87,17 @@ export default function Marketplace() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filtered.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-20">
-            <MapPin className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
-            <p className="text-muted-foreground">No properties match your search.</p>
+        {filtered.length === 0 ? (
+          <EmptyState
+            icon={MapPin}
+            title="No properties found"
+            description="Try adjusting your filters or search query to find more properties."
+          />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filtered.map((property) => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
           </div>
         )}
       </div>

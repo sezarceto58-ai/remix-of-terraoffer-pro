@@ -6,6 +6,8 @@ import { MapPin, Plus, Clock, CheckCircle2, AlertCircle, FileText, Trash2 } from
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import EmptyState from "@/components/EmptyState";
+import PlanResultSkeleton from "@/components/skeletons/PlanResultSkeleton";
 
 type PlanRow = {
   id: string;
@@ -68,13 +70,15 @@ export default function DeveloperPlans() {
       </div>
 
       {loading ? (
-        <div className="space-y-3">{[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
+        <PlanResultSkeleton />
       ) : plans.length === 0 ? (
-        <div className="rounded-xl bg-card border border-border p-8 text-center">
-          <MapPin className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-foreground font-medium">No plans yet</p>
-          <Link to="/developer/analyze"><Button variant="outline" className="mt-4"><Plus className="w-4 h-4 mr-2" /> Create First Plan</Button></Link>
-        </div>
+        <EmptyState
+          icon={MapPin}
+          title="No plans yet"
+          description="Analyze your first land plot to generate an AI feasibility report."
+          actionLabel="New Analysis"
+          onAction={() => window.location.href = "/developer/analyze"}
+        />
       ) : (
         <div className="space-y-3">
           {plans.map((plan) => {
