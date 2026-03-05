@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, TrendingDown, Home, Star, Check, Trash2 } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 
 interface Alert {
   id: string;
@@ -101,10 +102,11 @@ export default function Alerts() {
       {/* Alert list */}
       <div className="space-y-2">
         {filtered.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No alerts to show.</p>
-          </div>
+          <EmptyState
+            icon={Bell}
+            title="No alerts set"
+            description="Create an alert to be notified of matching properties."
+          />
         ) : (
           filtered.map((alert) => {
             const Icon = typeIcons[alert.type];

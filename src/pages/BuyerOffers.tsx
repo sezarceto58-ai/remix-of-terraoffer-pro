@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BadgeDollarSign, Clock, Filter, ArrowUpDown } from "lucide-react";
 import OfferCard from "@/components/OfferCard";
+import EmptyState from "@/components/EmptyState";
 import { mockOffers } from "@/data/mockData";
 
 const statusFilters = ["all", "SUBMITTED", "VIEWED", "ACCEPTED", "REJECTED", "COUNTERED", "EXPIRED", "WITHDRAWN"] as const;
@@ -84,10 +85,13 @@ export default function BuyerOffers() {
       {/* Offers */}
       <div className="grid gap-4">
         {filtered.length === 0 ? (
-          <div className="text-center py-12 rounded-xl bg-card border border-border">
-            <BadgeDollarSign className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-            <p className="text-sm text-muted-foreground">No offers match this filter.</p>
-          </div>
+          <EmptyState
+            icon={BadgeDollarSign}
+            title="No offers yet"
+            description="Find a property you love and make an offer."
+            actionLabel="Discover Properties"
+            onAction={() => window.location.href = "/buyer/discover"}
+          />
         ) : (
           filtered.map((offer) => (
             <OfferCard key={offer.id} offer={offer} />

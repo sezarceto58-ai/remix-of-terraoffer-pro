@@ -234,27 +234,33 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          onboarding_completed: boolean | null
           phone: string | null
           updated_at: string
           user_id: string
+          user_preferences: Json | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarding_completed?: boolean | null
           phone?: string | null
           updated_at?: string
           user_id: string
+          user_preferences?: Json | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          onboarding_completed?: boolean | null
           phone?: string | null
           updated_at?: string
           user_id?: string
+          user_preferences?: Json | null
         }
         Relationships: []
       }
