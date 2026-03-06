@@ -23,8 +23,6 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useOnboarding } from "@/hooks/useOnboarding";
-import Onboarding from "@/components/Onboarding";
 
 const buyerNav = [
 {
@@ -137,7 +135,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
 
-  const { showOnboarding, completeOnboarding } = useOnboarding();
   const nav = getNavForPath(location.pathname);
   const initials = user?.user_metadata?.display_name ?
   user.user_metadata.display_name.slice(0, 2).toUpperCase() :
@@ -252,7 +249,6 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
 
         <div className="p-4 lg:p-6">{children}</div>
       </main>
-      <Onboarding open={showOnboarding} onComplete={completeOnboarding} />
     </div>);
 
 }
