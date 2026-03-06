@@ -4,9 +4,18 @@ import {
   UserCog, Ban, ArrowUpDown, Globe, Coins, MapPin, Search,
 } from "lucide-react";
 import StatsCard from "@/components/StatsCard";
-import OfferCard from "@/components/OfferCard";
-import { adminStats, mockOffers } from "@/data/mockData";
 import { useState } from "react";
+
+const adminStats = {
+  totalListings: 2847,
+  activeOffers: 342,
+  pendingVerifications: 28,
+  flaggedListings: 7,
+  totalUsers: 14320,
+  monthlyRevenue: 48500,
+  conversionRate: 3.2,
+  avgTerraScore: 71,
+};
 
 const tabs = [
   { id: "overview", label: "Overview", icon: Activity },
@@ -135,9 +144,7 @@ export default function AdminDashboard() {
               <button className="px-3 py-1.5 rounded-lg bg-warning/10 text-warning text-xs font-medium">Flag Buyer</button>
             </div>
           </div>
-          {mockOffers.map((offer) => (
-            <OfferCard key={offer.id} offer={offer} />
-          ))}
+          <p className="text-sm text-muted-foreground text-center py-8">Offer monitoring requires database integration.</p>
         </div>
       )}
 

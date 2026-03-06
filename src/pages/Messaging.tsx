@@ -129,7 +129,7 @@ export default function Messaging() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search conversations..."
-                className="w-full pl-9 pr-3 py-2 rounded-lg bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none"
+                className="w-full pl-9 pr-3 py-2 rounded-lg bg-muted/30 text-foreground text-sm placeholder:text-muted-foreground outline-none"
               />
             </div>
           </div>
@@ -184,7 +184,7 @@ export default function Messaging() {
                   className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${
                     msg.sender === "me"
                       ? "bg-primary text-primary-foreground rounded-br-md"
-                      : "bg-secondary text-foreground rounded-bl-md"
+                      : "bg-muted/30 text-foreground rounded-bl-md"
                   }`}
                 >
                   <p>{msg.text}</p>
@@ -207,7 +207,7 @@ export default function Messaging() {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1 px-4 py-2.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-muted/30 text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();

@@ -1,39 +1,45 @@
 import { useState } from "react";
-import { GitCompareArrows, X, Plus, TrendingUp, MapPin, Bed, Bath, Maximize } from "lucide-react";
-import { mockProperties, type Property } from "@/data/mockData";
+import { GitCompareArrows, X, Plus, MapPin, Loader2 } from "lucide-react";
+import { useProperties } from "@/hooks/useProperties";
+import type { DbProperty } from "@/types/database";
 import TerraScore from "@/components/TerraScore";
+import property1 from "@/assets/property-1.jpg";
 
-const compareFields: { label: string; key: string; format?: (v: Property) => string }[] = [
+const compareFields: { label: string; key: keyof DbProperty; format?: (v: DbProperty) => string }[] = [
   { label: "Price", key: "price", format: (p) => `$${p.price.toLocaleString()}` },
-  { label: "Price (IQD)", key: "priceIQD", format: (p) => p.priceIQD ? `${p.priceIQD.toLocaleString()} IQD` : "—" },
-  { label: "Type", key: "propertyType" },
+  { label: "Price (IQD)", key: "price_iqd", format: (p) => p.price_iqd ? `${p.price_iqd.toLocaleString()} IQD` : "—" },
+  { label: "Type", key: "property_type" },
   { label: "City", key: "city" },
   { label: "District", key: "district" },
   { label: "Bedrooms", key: "bedrooms" },
   { label: "Bathrooms", key: "bathrooms" },
   { label: "Area (m²)", key: "area" },
-  { label: "TerraScore", key: "terraScore" },
-  { label: "AI Valuation", key: "aiValuation", format: (p) => `$${p.aiValuation.toLocaleString()}` },
-  { label: "AI Confidence", key: "aiConfidence" },
+  { label: "TerraScore", key: "terra_score" },
+  { label: "AI Valuation", key: "ai_valuation", format: (p) => p.ai_valuation ? `$${p.ai_valuation.toLocaleString()}` : "—" },
   { label: "Verified", key: "verified", format: (p) => p.verified ? "✅ Yes" : "❌ No" },
-  { label: "Agent", key: "agentName" },
+  { label: "Agent", key: "agent_name" },
   { label: "Views", key: "views" },
   { label: "Status", key: "status" },
 ];
 
 export default function CompareListings() {
-  const [selected, setSelected] = useState<string[]>(["1", "2"]);
+  const { data: allProperties = [], isLoading } = useProperties();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const selectedProperties = selected.map((id) => mockProperties.find((p) => p.id === id)).filter(Boolean) as Property[];
-  const available = mockProperties.filter((p) => !selected.includes(p.id));
+  // Auto-select first 2 when data loads
+  const selected = selectedIds.length > 0 ? selectedIds : allProperties.slice(0, 2).map(p => p.id);
+  const selectedProperties = selected.map((id) => allProperties.find((p) => p.id === id)).filter(Boolean) as DbProperty[];
+  const available = allProperties.filter((p) => !selected.includes(p.id));
 
   const addProperty = (id: string) => {
-    if (selected.length < 4) setSelected([...selected, id]);
+    if (selected.length < 4) setSelectedIds([...selected, id]);
   };
 
   const removeProperty = (id: string) => {
-    setSelected(selected.filter((s) => s !== id));
+    setSelectedIds(selected.filter((s) => s !== id));
   };
+
+  if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
@@ -41,109 +47,53 @@ export default function CompareListings() {
         <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <GitCompareArrows className="w-6 h-6 text-primary" /> Compare Listings
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Side-by-side property comparison — Elite feature.</p>
+        <p className="text-sm text-muted-foreground mt-1">Side-by-side property comparison.</p>
       </div>
 
-      {/* Add property selector */}
       {selected.length < 4 && available.length > 0 && (
         <div className="flex gap-2 flex-wrap">
           <span className="text-sm text-muted-foreground self-center">Add:</span>
-          {available.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => addProperty(p.id)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors"
-            >
+          {available.slice(0, 6).map((p) => (
+            <button key={p.id} onClick={() => addProperty(p.id)} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
               <Plus className="w-3 h-3" /> {p.title}
             </button>
           ))}
         </div>
       )}
 
-      {/* Comparison table */}
-      <div className="overflow-x-auto">
-        <div className="min-w-[600px]">
-          {/* Headers */}
-          <div className="grid gap-4" style={{ gridTemplateColumns: `180px repeat(${selectedProperties.length}, 1fr)` }}>
-            <div />
-            {selectedProperties.map((p) => (
-              <div key={p.id} className="rounded-xl bg-card border border-border p-4 relative animate-fade-in">
-                <button
-                  onClick={() => removeProperty(p.id)}
-                  className="absolute top-2 right-2 p-1 rounded-full hover:bg-secondary text-muted-foreground"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-                <img src={p.image} alt={p.title} className="w-full h-32 object-cover rounded-lg mb-3" />
-                <h3 className="font-semibold text-foreground text-sm">{p.title}</h3>
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                  <MapPin className="w-3 h-3" /> {p.city}, {p.district}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Rows */}
-          {compareFields.map((field, i) => (
-            <div
-              key={field.key}
-              className="grid gap-4 mt-1"
-              style={{ gridTemplateColumns: `180px repeat(${selectedProperties.length}, 1fr)` }}
-            >
-              <div className={`flex items-center px-3 py-2.5 text-xs font-medium text-muted-foreground ${i % 2 === 0 ? "bg-secondary/50 rounded-l-lg" : ""}`}>
-                {field.label}
-              </div>
-              {selectedProperties.map((p) => {
-                const val = field.format ? field.format(p) : String((p as any)[field.key]);
-                const isHighest = field.key === "terraScore" &&
-                  p.terraScore === Math.max(...selectedProperties.map((sp) => sp.terraScore));
-                return (
-                  <div
-                    key={p.id}
-                    className={`flex items-center px-3 py-2.5 text-sm font-medium ${
-                      isHighest ? "text-primary" : "text-foreground"
-                    } ${i % 2 === 0 ? "bg-secondary/50" : ""} ${
-                      i % 2 === 0 && selectedProperties.indexOf(p) === selectedProperties.length - 1 ? "rounded-r-lg" : ""
-                    }`}
-                  >
-                    {field.key === "terraScore" ? (
-                      <span className={`font-bold ${p.terraScore >= 80 ? "text-success" : p.terraScore >= 60 ? "text-warning" : "text-destructive"}`}>
-                        {p.terraScore}
-                      </span>
-                    ) : (
-                      val
-                    )}
-                  </div>
-                );
-              })}
+      {selectedProperties.length > 0 && (
+        <div className="overflow-x-auto">
+          <div className="min-w-[600px]">
+            <div className="grid gap-4" style={{ gridTemplateColumns: `180px repeat(${selectedProperties.length}, 1fr)` }}>
+              <div />
+              {selectedProperties.map((p) => (
+                <div key={p.id} className="rounded-xl bg-card border border-border p-4 relative animate-fade-in">
+                  <button onClick={() => removeProperty(p.id)} className="absolute top-2 right-2 p-1 rounded-full hover:bg-secondary text-muted-foreground"><X className="w-3 h-3" /></button>
+                  <img src={p.property_images?.[0]?.url || property1} alt={p.title} className="w-full h-32 object-cover rounded-lg mb-3" />
+                  <h3 className="font-semibold text-foreground text-sm">{p.title}</h3>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" /> {p.city}, {p.district}</p>
+                </div>
+              ))}
             </div>
-          ))}
 
-          {/* Features row */}
-          <div
-            className="grid gap-4 mt-1"
-            style={{ gridTemplateColumns: `180px repeat(${selectedProperties.length}, 1fr)` }}
-          >
-            <div className="flex items-start px-3 py-2.5 text-xs font-medium text-muted-foreground bg-secondary/50 rounded-l-lg">
-              Features
-            </div>
-            {selectedProperties.map((p, idx) => (
-              <div
-                key={p.id}
-                className={`flex flex-wrap gap-1 px-3 py-2.5 bg-secondary/50 ${
-                  idx === selectedProperties.length - 1 ? "rounded-r-lg" : ""
-                }`}
-              >
-                {p.features.map((f) => (
-                  <span key={f} className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary font-medium">
-                    {f}
-                  </span>
-                ))}
+            {compareFields.map((field, i) => (
+              <div key={field.key} className="grid gap-4 mt-1" style={{ gridTemplateColumns: `180px repeat(${selectedProperties.length}, 1fr)` }}>
+                <div className={`flex items-center px-3 py-2.5 text-xs font-medium text-muted-foreground ${i % 2 === 0 ? "bg-secondary/50 rounded-l-lg" : ""}`}>{field.label}</div>
+                {selectedProperties.map((p) => {
+                  const val = field.format ? field.format(p) : String((p as any)[field.key] ?? "—");
+                  return (
+                    <div key={p.id} className={`flex items-center px-3 py-2.5 text-sm font-medium text-foreground ${i % 2 === 0 ? "bg-secondary/50" : ""}`}>
+                      {field.key === "terra_score" ? (
+                        <span className={`font-bold ${p.terra_score >= 80 ? "text-success" : p.terra_score >= 60 ? "text-warning" : "text-destructive"}`}>{p.terra_score}</span>
+                      ) : val}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

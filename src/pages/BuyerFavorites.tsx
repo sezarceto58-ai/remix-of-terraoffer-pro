@@ -1,27 +1,16 @@
-import { useState } from "react";
-import { Heart, Trash2, Bell } from "lucide-react";
+import { Heart, Trash2, Bell, Loader2 } from "lucide-react";
 import PropertyCard from "@/components/PropertyCard";
-import { mockProperties } from "@/data/mockData";
-import EmptyState from "@/components/EmptyState";
+import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { useToast } from "@/hooks/use-toast";
 
 export default function BuyerFavorites() {
   const { toast } = useToast();
-  const [favorites, setFavorites] = useState(mockProperties);
-  const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const { data: favorites = [], isLoading } = useFavorites();
+  const toggleFav = useToggleFavorite();
 
   const removeFavorite = (id: string) => {
-    const property = favorites.find((p) => p.id === id);
-    setFavorites(favorites.filter((p) => p.id !== id));
-    toast({ title: "Removed from favorites", description: property?.title });
-  };
-
-  const toggleAlerts = () => {
-    setAlertsEnabled(!alertsEnabled);
-    toast({
-      title: alertsEnabled ? "Alerts disabled" : "Alerts enabled",
-      description: alertsEnabled ? "You will no longer receive price drop alerts." : "You'll be notified when prices drop on your saved properties.",
-    });
+    toggleFav.mutate(id);
+    toast({ title: "Removed from favorites" });
   };
 
   return (
@@ -31,18 +20,8 @@ export default function BuyerFavorites() {
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
             <Heart className="w-6 h-6 text-destructive" /> Saved Properties
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {favorites.length} properties saved • Get price drop alerts on your favorites.
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{favorites.length} properties saved</p>
         </div>
-        <button
-          onClick={toggleAlerts}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-            alertsEnabled ? "bg-success/10 text-success" : "bg-primary/10 text-primary hover:bg-primary/20"
-          }`}
-        >
-          <Bell className="w-4 h-4" /> {alertsEnabled ? "Alerts On" : "Enable Alerts"}
-        </button>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -53,43 +32,33 @@ export default function BuyerFavorites() {
         <div className="rounded-xl bg-card border border-border p-4">
           <p className="text-xs text-muted-foreground">Avg Price</p>
           <p className="text-xl font-bold text-foreground mt-1">
-            ${Math.round(favorites.reduce((s, p) => s + p.price, 0) / (favorites.length || 1) / 1000)}K
+            ${favorites.length ? Math.round(favorites.reduce((s, p) => s + p.price, 0) / favorites.length / 1000) : 0}K
           </p>
         </div>
         <div className="rounded-xl bg-card border border-border p-4">
           <p className="text-xs text-muted-foreground">Avg TerraScore</p>
           <p className="text-xl font-bold text-success mt-1">
-            {Math.round(favorites.reduce((s, p) => s + p.terraScore, 0) / (favorites.length || 1))}
+            {favorites.length ? Math.round(favorites.reduce((s, p) => s + p.terra_score, 0) / favorites.length) : 0}
           </p>
-        </div>
-        <div className="rounded-xl bg-card border border-border p-4">
-          <p className="text-xs text-muted-foreground">Price Drops</p>
-          <p className="text-xl font-bold text-primary mt-1">2</p>
         </div>
       </div>
 
-      {favorites.length === 0 ? (
-        <EmptyState
-          icon={Heart}
-          title="No saved properties yet"
-          description="Start exploring the marketplace and save properties you love."
-          actionLabel="Discover Properties"
-          onAction={() => window.location.href = "/buyer/discover"}
-        />
+      {isLoading ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+      ) : favorites.length === 0 ? (
+        <div className="text-center py-20 rounded-xl bg-card border border-border">
+          <Heart className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
+          <p className="text-muted-foreground">No saved properties yet.</p>
+          <p className="text-sm text-muted-foreground/60 mt-1">Browse the marketplace and save properties you like.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {favorites.map((property) => (
             <div key={property.id} className="relative group">
               <PropertyCard property={property} />
               <div className="absolute top-3 right-12 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    removeFavorite(property.id);
-                  }}
-                  className="p-2 rounded-full bg-destructive/80 text-destructive-foreground hover:bg-destructive transition-colors"
-                  title="Remove from favorites"
-                >
+                <button onClick={(e) => { e.preventDefault(); removeFavorite(property.id); }}
+                  className="p-2 rounded-full bg-destructive/80 text-destructive-foreground hover:bg-destructive transition-colors" title="Remove">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>
