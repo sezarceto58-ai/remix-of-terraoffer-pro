@@ -1,22 +1,60 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
+import { requireUser } from "../_shared/auth.ts";
+import { consumeUsage } from "../_shared/usage.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+function extractJson(raw: string): any {
+  // Strip markdown fences
+  let cleaned = raw
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+
+  // Find outermost JSON object boundaries
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("No JSON object found in response");
+  }
+  cleaned = cleaned.substring(start, end + 1);
+
+  // First attempt: direct parse
+  try {
+    return JSON.parse(cleaned);
+  } catch (_) {
+    // Fix common LLM issues
+    cleaned = cleaned
+      .replace(/,\s*}/g, "}")           // trailing commas before }
+      .replace(/,\s*]/g, "]")           // trailing commas before ]
+      .replace(/[\x00-\x1F\x7F]/g, (c) => c === "\n" || c === "\r" || c === "\t" ? c : "") // control chars
+      .replace(/\n/g, " ")              // flatten newlines inside strings
+      .replace(/\t/g, " ");
+
+    try {
+      return JSON.parse(cleaned);
+    } catch (e2) {
+      // Last resort: try to fix unescaped quotes in string values
+      // by replacing single quotes used as string delimiters
+      cleaned = cleaned.replace(/'/g, '"');
+      return JSON.parse(cleaned);
+    }
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing authorization");
+    const { token } = await requireUser(req);
+
+    // Planner is heavier than normal AI calls: charge 5 credits
+    await consumeUsage(token, "planner_analyze", 5);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
     );
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -241,7 +279,7 @@ CRITICAL PRICING RULES:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: "You are a senior real estate feasibility consultant with 20+ years experience in Middle East and global markets. You produce realistic, data-driven analysis. Return only valid JSON." },
           { role: "user", content: prompt },
@@ -271,10 +309,11 @@ CRITICAL PRICING RULES:
 
     let result;
     try {
-      const jsonStr = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      result = JSON.parse(jsonStr);
-    } catch {
-      console.error("Failed to parse AI output:", content);
+      result = extractJson(content);
+    } catch (parseErr) {
+      console.error("Failed to parse AI output. Raw content length:", content.length);
+      console.error("First 500 chars:", content.substring(0, 500));
+      console.error("Last 500 chars:", content.substring(content.length - 500));
       await supabase.from("project_plans").update({ status: "error" }).eq("id", plan.id);
       throw new Error("AI returned invalid output");
     }
