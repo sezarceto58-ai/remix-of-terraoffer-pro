@@ -77,7 +77,7 @@ export default function CompareListings() {
             </div>
 
             {compareFields.map((field, i) => (
-              <div key={field.key} className="grid gap-4 mt-1" style={{ gridTemplateColumns: `180px repeat(${selectedProperties.length}, 1fr)` }}>
+              <div key={String(field.key)} className="grid gap-4 mt-1" style={{ gridTemplateColumns: `180px repeat(${selectedProperties.length}, 1fr)` }}>
                 <div className={`flex items-center px-3 py-2.5 text-xs font-medium text-muted-foreground ${i % 2 === 0 ? "bg-secondary/50 rounded-l-lg" : ""}`}>{field.label}</div>
                 {selectedProperties.map((p) => {
                   const val = field.format ? field.format(p) : String((p as any)[field.key] ?? "—");

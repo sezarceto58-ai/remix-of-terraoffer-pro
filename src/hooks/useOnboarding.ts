@@ -14,13 +14,13 @@ export function useOnboarding() {
     }
 
     (async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("profiles")
         .select("onboarding_completed")
         .eq("user_id", user.id)
         .single();
 
-      if (data && !(data as any).onboarding_completed) {
+      if (data && !data.onboarding_completed) {
         setShowOnboarding(true);
       }
       setLoading(false);
@@ -29,12 +29,12 @@ export function useOnboarding() {
 
   const completeOnboarding = async (preferences?: Record<string, any>) => {
     if (!user) return;
-    await supabase
+    await (supabase as any)
       .from("profiles")
       .update({
         onboarding_completed: true,
         user_preferences: preferences || {},
-      } as any)
+      })
       .eq("user_id", user.id);
     setShowOnboarding(false);
   };
