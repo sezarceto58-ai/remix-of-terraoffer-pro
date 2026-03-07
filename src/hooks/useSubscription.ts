@@ -6,8 +6,10 @@ export const TIERS = {
   free: {
     name: "Free",
     price_id: "price_1T3J60RqPv86QmN4g7IkhjM7",
+    price_id_annual: "",
     product_id: "prod_U1LnxxW5quYjSn",
     price: 0,
+    priceAnnual: 0,
     features: [
       "Browse marketplace",
       "Save up to 5 favorites",
@@ -18,26 +20,32 @@ export const TIERS = {
   pro: {
     name: "Pro",
     price_id: "price_1T3J6aRqPv86QmN4R2yLkgXL",
+    price_id_annual: "price_1T3J6aRqPv86QmN4R2yLkgXL_annual",
     product_id: "prod_U1LoY0ChJHxRfM",
     price: 29,
+    priceAnnual: 244, // $29 * 12 * 0.70 = $243.6 ≈ $244
     features: [
       "Everything in Free",
       "Unlimited favorites & offers",
       "Analytics dashboard",
       "Priority alerts",
       "CRM tools",
+      "AI-Powered Listing generation",
     ],
   },
   elite: {
     name: "Elite",
     price_id: "price_1T3J6qRqPv86QmN4u811AFF2",
+    price_id_annual: "price_1T3J6qRqPv86QmN4u811AFF2_annual",
     product_id: "prod_U1LocwDTmSN7Od",
     price: 79,
+    priceAnnual: 663, // $79 * 12 * 0.70 = $663.6 ≈ $663
     features: [
       "Everything in Pro",
       "Investor portfolio tools",
       "Deposit verification",
       "Proof-of-funds uploads",
+      "AI Opportunity Analysis",
       "Dedicated support",
     ],
   },
