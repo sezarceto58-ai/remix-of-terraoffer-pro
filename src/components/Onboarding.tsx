@@ -91,9 +91,9 @@ export default function Onboarding({ open, onComplete }: OnboardingProps) {
   const handleFinish = async () => {
     // Update profile name/phone
     if (user) {
-      await supabase
+      await (supabase as any)
         .from("profiles")
-        .update({ display_name: displayName, phone } as any)
+        .update({ display_name: displayName, phone })
         .eq("user_id", user.id);
     }
     onComplete(buildPreferences());

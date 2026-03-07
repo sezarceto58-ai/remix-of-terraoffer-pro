@@ -23,104 +23,64 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import Onboarding from "@/components/Onboarding";
+import MobileBottomNav from "@/components/MobileBottomNav";
 
 const buyerNav = [
-{
-  label: "Home",
-  items: [
-  { path: "/buyer", icon: LayoutDashboard, label: "Dashboard" }]
-
-},
-{
-  label: "Marketplace",
-  items: [
-  { path: "/buyer/discover", icon: Search, label: "Discover" },
-  { path: "/buyer/compare", icon: GitCompareArrows, label: "Compare" },
-  { path: "/buyer/favorites", icon: Heart, label: "Favorites" },
-  { path: "/buyer/alerts", icon: Bell, label: "Alerts" }]
-
-},
-{
-  label: "Offers & Deals",
-  items: [
-  { path: "/buyer/offers", icon: BadgeDollarSign, label: "My Offers" },
-  { path: "/buyer/messages", icon: MessageSquare, label: "Messages" }]
-
-},
-{
-  label: "Investor Tools",
-  items: [
-  { path: "/buyer/investor", icon: TrendingUp, label: "AI Intelligence" }]
-
-}];
-
+  { label: "Home", items: [{ path: "/buyer", icon: LayoutDashboard, label: "Dashboard" }] },
+  { label: "Marketplace", items: [
+    { path: "/buyer/discover", icon: Search, label: "Discover" },
+    { path: "/buyer/compare", icon: GitCompareArrows, label: "Compare" },
+    { path: "/buyer/favorites", icon: Heart, label: "Favorites" },
+    { path: "/buyer/alerts", icon: Bell, label: "Alerts" },
+  ]},
+  { label: "Offers & Deals", items: [
+    { path: "/buyer/offers", icon: BadgeDollarSign, label: "My Offers" },
+    { path: "/buyer/messages", icon: MessageSquare, label: "Messages" },
+  ]},
+  { label: "Investor Tools", items: [
+    { path: "/buyer/investor", icon: TrendingUp, label: "AI Intelligence" },
+  ]},
+];
 
 const sellerNav = [
-{
-  label: "Home",
-  items: [
-  { path: "/seller", icon: LayoutDashboard, label: "Dashboard" }]
-
-},
-{
-  label: "Listings",
-  items: [
-  { path: "/seller/listings", icon: Building2, label: "My Listings" },
-  { path: "/seller/create", icon: Plus, label: "New Listing + AI" }]
-
-},
-{
-  label: "Sales Pipeline",
-  items: [
-  { path: "/seller/offers", icon: BadgeDollarSign, label: "Offer Inbox" },
-  { path: "/seller/crm", icon: Users, label: "CRM & Leads" },
-  { path: "/seller/messages", icon: MessageSquare, label: "Messages" }]
-
-},
-{
-  label: "Performance",
-  items: [
-  { path: "/seller/analytics", icon: BarChart3, label: "Analytics" }]
-},
-{
-  label: "AI Tools",
-  items: [
-  { path: "/seller/investor", icon: TrendingUp, label: "Investor Intelligence" }]
-}];
-
+  { label: "Home", items: [{ path: "/seller", icon: LayoutDashboard, label: "Dashboard" }] },
+  { label: "Listings", items: [
+    { path: "/seller/listings", icon: Building2, label: "My Listings" },
+    { path: "/seller/create", icon: Plus, label: "New Listing + AI" },
+  ]},
+  { label: "Sales Pipeline", items: [
+    { path: "/seller/offers", icon: BadgeDollarSign, label: "Offer Inbox" },
+    { path: "/seller/crm", icon: Users, label: "CRM & Leads" },
+    { path: "/seller/messages", icon: MessageSquare, label: "Messages" },
+  ]},
+  { label: "Performance", items: [
+    { path: "/seller/analytics", icon: BarChart3, label: "Analytics" },
+  ]},
+  { label: "AI Tools", items: [
+    { path: "/seller/investor", icon: TrendingUp, label: "Investor Intelligence" },
+  ]},
+];
 
 const developerNav = [
-{
-  label: "Home",
-  items: [
-  { path: "/developer", icon: LayoutDashboard, label: "Dashboard" }]
-},
-{
-  label: "Opportunities",
-  items: [
-  { path: "/developer/opportunities", icon: Briefcase, label: "Opportunity Feed" },
-  { path: "/developer/portfolio", icon: TrendingUp, label: "Portfolio Insights" }]
-},
-{
-  label: "Planning",
-  items: [
-  { path: "/developer/analyze", icon: Search, label: "Analyze Land" },
-  { path: "/developer/plans", icon: Building2, label: "All Plans" }]
-},
-{
-  label: "Tools",
-  items: [
-  { path: "/developer/messages", icon: MessageSquare, label: "Messages" }]
-}];
+  { label: "Home", items: [{ path: "/developer", icon: LayoutDashboard, label: "Dashboard" }] },
+  { label: "Opportunities", items: [
+    { path: "/developer/opportunities", icon: Briefcase, label: "Opportunity Feed" },
+    { path: "/developer/portfolio", icon: TrendingUp, label: "Portfolio Insights" },
+  ]},
+  { label: "Planning", items: [
+    { path: "/developer/analyze", icon: Search, label: "Analyze Land" },
+    { path: "/developer/plans", icon: Building2, label: "All Plans" },
+  ]},
+  { label: "Tools", items: [
+    { path: "/developer/messages", icon: MessageSquare, label: "Messages" },
+  ]},
+];
 
 const adminNav = [
-{
-  label: "Governance",
-  items: [
-  { path: "/admin", icon: Shield, label: "Console" }]
-
-}];
-
+  { label: "Governance", items: [{ path: "/admin", icon: Shield, label: "Console" }] },
+];
 
 function getNavForPath(pathname: string) {
   if (pathname.startsWith("/developer")) return developerNav;
@@ -129,16 +89,17 @@ function getNavForPath(pathname: string) {
   return buyerNav;
 }
 
-export default function Layout({ children }: {children: React.ReactNode;}) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
 
   const nav = getNavForPath(location.pathname);
-  const initials = user?.user_metadata?.display_name ?
-  user.user_metadata.display_name.slice(0, 2).toUpperCase() :
-  user?.email?.slice(0, 2).toUpperCase() ?? "TV";
+  const initials = user?.user_metadata?.display_name
+    ? user.user_metadata.display_name.slice(0, 2).toUpperCase()
+    : user?.email?.slice(0, 2).toUpperCase() ?? "TV";
 
   const handleSignOut = async () => {
     await signOut();
@@ -147,18 +108,19 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {sidebarOpen &&
-      <div
-        className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
-        onClick={() => setSidebarOpen(false)} />
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-      }
-
+      {/* Sidebar — hidden on mobile */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 lg:translate-x-0 lg:static ${
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"}`
-        }>
-
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 hidden lg:block lg:static lg:translate-x-0 ${
+          sidebarOpen ? "!block translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border text-secondary">
           <Link to="/buyer" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-gold flex items-center justify-center">
@@ -172,37 +134,36 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
         </div>
 
         <nav className="p-3 space-y-6 overflow-y-auto h-[calc(100vh-200px)]">
-          {nav.map((section) =>
-          <div key={section.label}>
+          {nav.map((section) => (
+            <div key={section.label}>
               <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
                 {section.label}
               </p>
               <div className="space-y-0.5">
                 {section.items.map((item) => {
-                const isActive = location.pathname === item.path;
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    isActive ?
-                    "bg-primary/10 text-primary" :
-                    "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`
-                    }>
-
+                  const isActive = location.pathname === item.path;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      }`}
+                    >
                       <item.icon className="w-4 h-4" />
                       {item.label}
                       {isActive && <ChevronRight className="w-3 h-3 ml-auto" />}
-                    </Link>);
-
-              })}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
-          )}
+          ))}
         </nav>
 
-        {/* Account links */}
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border space-y-0.5">
           <Link
             to="/pricing"
@@ -247,8 +208,16 @@ export default function Layout({ children }: {children: React.ReactNode;}) {
           </div>
         </header>
 
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="p-4 lg:p-6 pb-20 lg:pb-6">{children}</div>
       </main>
-    </div>);
 
+      {/* Mobile bottom nav */}
+      <MobileBottomNav />
+
+      {/* Onboarding wizard */}
+      {showOnboarding && (
+        <Onboarding open={showOnboarding} onComplete={completeOnboarding} />
+      )}
+    </div>
+  );
 }

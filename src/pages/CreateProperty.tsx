@@ -1,9 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Plus, ImagePlus, DollarSign, MapPin, Maximize, Tag, Brain, Loader2, Sparkles, TrendingUp, Shield, Users, Leaf, CheckCircle, XCircle, AlertTriangle, Target, BarChart3, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Building2, Plus, ImagePlus, DollarSign, MapPin, Maximize, Tag,
+  Brain, Loader2, Sparkles, TrendingUp, Shield, Users, Leaf,
+  CheckCircle, XCircle, AlertTriangle, Target, BarChart3,
+  ChevronDown, ChevronUp, Lock,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const propertyTypes = ["Apartment", "Villa", "Penthouse", "Commercial", "Land", "Townhouse"];
 const cities = ["Erbil", "Baghdad", "Basra", "Sulaymaniyah", "Duhok", "Kirkuk"];
@@ -14,14 +20,12 @@ const featureOptions = [
   "Private Elevator", "360° Virtual Tour",
 ];
 
-type TabKey = "manual" | "ai";
-
 export default function CreateProperty() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<TabKey>("manual");
+  const { tier } = useSubscription();
+  const isPaid = tier === "pro" || tier === "elite";
 
-  // Manual form state
   const [form, setForm] = useState({
     title: "", titleAr: "", price: "", currency: "USD" as "USD" | "IQD",
     type: "sale" as "sale" | "rent", propertyType: "Apartment", city: "Erbil",
@@ -29,7 +33,6 @@ export default function CreateProperty() {
     features: [] as string[],
   });
 
-  // AI state
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<any>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -57,6 +60,10 @@ export default function CreateProperty() {
   };
 
   const handleAIGenerate = async () => {
+    if (!isPaid) {
+      toast({ title: "Pro Feature", description: "Upgrade to Pro or Elite to use AI-Powered Listing generation.", variant: "destructive" });
+      return;
+    }
     if (!form.district || !form.area) {
       toast({ title: "Missing info", description: "Please fill in district and area first.", variant: "destructive" });
       return;
@@ -79,8 +86,7 @@ export default function CreateProperty() {
         toast({ title: "AI Error", description: data.error, variant: "destructive" });
       } else {
         setAiResult(data.analysis);
-        setActiveTab("ai");
-        toast({ title: "Analysis complete ✨", description: "AI listing and analysis are ready!" });
+        toast({ title: "🧠 Analysis complete", description: "AI listing and analysis are ready!" });
       }
     } catch (err: any) {
       toast({ title: "Generation failed", description: err.message, variant: "destructive" });
@@ -97,7 +103,6 @@ export default function CreateProperty() {
       titleAr: aiResult.listing.titleAr || prev.titleAr,
       description: aiResult.listing.description || prev.description,
     }));
-    setActiveTab("manual");
     toast({ title: "Applied!", description: "AI-generated content applied to your listing form." });
   };
 
@@ -105,63 +110,57 @@ export default function CreateProperty() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-gradient-gold flex items-center justify-center">
           <Plus className="w-6 h-6 text-primary-foreground" />
         </div>
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Create New Listing</h1>
-          <p className="text-sm text-muted-foreground">Fill in details manually or let AI generate your listing</p>
+          <p className="text-sm text-muted-foreground">Fill in basic details below, then generate to get full AI analysis & optimized description</p>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 p-1 rounded-xl bg-card border border-border">
-        <button
-          onClick={() => setActiveTab("manual")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-            activeTab === "manual"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-          }`}
-        >
-          <Building2 className="w-4 h-4" /> Manual Entry
-        </button>
-        <button
-          onClick={() => setActiveTab("ai")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-            activeTab === "ai"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-          }`}
-        >
-          <Brain className="w-4 h-4" /> AI Analysis & Insights
-        </button>
-      </div>
-
-      {/* AI Generate Button (always visible) */}
-      <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4 flex items-center justify-between">
+      {/* AI Generate Button */}
+      <div className={`rounded-xl border p-4 flex items-center justify-between ${isPaid ? "border-dashed border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
         <div className="flex items-center gap-3">
           <Sparkles className="w-5 h-5 text-primary" />
           <div>
-            <p className="text-sm font-semibold text-foreground">AI-Powered Listing</p>
-            <p className="text-xs text-muted-foreground">Fill in basic details below, then generate AI analysis & optimized copy</p>
+            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+              AI-Powered Listing
+              {!isPaid && <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning text-[10px] font-bold flex items-center gap-1"><Lock className="w-3 h-3" /> PRO</span>}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isPaid
+                ? "Fill in basic details below, then generate AI analysis & optimized copy"
+                : "Upgrade to Pro to generate high-value, attractive property descriptions with AI"}
+            </p>
           </div>
         </div>
-        <Button onClick={handleAIGenerate} disabled={aiLoading} size="sm" className="bg-gradient-gold text-primary-foreground hover:opacity-90 border-0">
-          {aiLoading ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generating...</> : <><Brain className="w-4 h-4 mr-1" /> Generate</>}
+        <Button
+          onClick={isPaid ? handleAIGenerate : () => navigate("/pricing")}
+          disabled={aiLoading}
+          size="sm"
+          className={isPaid ? "bg-gradient-gold text-primary-foreground hover:opacity-90 border-0" : ""}
+          variant={isPaid ? "default" : "outline"}
+        >
+          {aiLoading ? (
+            <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Generating...</>
+          ) : isPaid ? (
+            <><Brain className="w-4 h-4 mr-1" /> Generate</>
+          ) : (
+            <><Lock className="w-4 h-4 mr-1" /> Upgrade</>
+          )}
         </Button>
       </div>
 
-      {activeTab === "manual" ? (
-        <ManualForm
-          form={form} update={update} toggleFeature={toggleFeature}
-          handlePublish={handlePublish} handleSaveDraft={handleSaveDraft} toast={toast}
-        />
-      ) : (
-        <AIResultsPanel result={aiResult} loading={aiLoading} expanded={expanded} toggle={toggle} applyAIToForm={applyAIToForm} />
-      )}
+      {/* AI Results (inline, no separate tab) */}
+      {aiResult && <AIResultsInline result={aiResult} expanded={expanded} toggle={toggle} applyAIToForm={applyAIToForm} />}
+
+      {/* Manual Form */}
+      <ManualForm
+        form={form} update={update} toggleFeature={toggleFeature}
+        handlePublish={handlePublish} handleSaveDraft={handleSaveDraft} toast={toast}
+      />
     </div>
   );
 }
@@ -170,7 +169,6 @@ export default function CreateProperty() {
 function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraft, toast }: any) {
   return (
     <div className="space-y-5">
-      {/* Images */}
       <div className="rounded-xl bg-card border border-border p-5">
         <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
           <ImagePlus className="w-4 h-4 text-primary" /> Property Images
@@ -185,7 +183,6 @@ function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraf
         </div>
       </div>
 
-      {/* Basic Info */}
       <div className="rounded-xl bg-card border border-border p-5 space-y-4">
         <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Building2 className="w-4 h-4 text-primary" /> Basic Information
@@ -216,7 +213,6 @@ function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraf
         </div>
       </div>
 
-      {/* Location */}
       <div className="rounded-xl bg-card border border-border p-5 space-y-4">
         <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <MapPin className="w-4 h-4 text-primary" /> Location
@@ -235,7 +231,6 @@ function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraf
         </div>
       </div>
 
-      {/* Pricing */}
       <div className="rounded-xl bg-card border border-border p-5 space-y-4">
         <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <DollarSign className="w-4 h-4 text-primary" /> Pricing
@@ -256,7 +251,6 @@ function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraf
         </div>
       </div>
 
-      {/* Specs */}
       <div className="rounded-xl bg-card border border-border p-5 space-y-4">
         <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Maximize className="w-4 h-4 text-primary" /> Specifications
@@ -277,13 +271,11 @@ function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraf
         </div>
       </div>
 
-      {/* Description */}
       <div className="rounded-xl bg-card border border-border p-5 space-y-4">
         <label className="text-xs text-muted-foreground mb-1 block">Description</label>
         <textarea value={form.description} onChange={(e: any) => update("description", e.target.value)} rows={4} placeholder="Describe the property in detail..." className="w-full px-3 py-2.5 rounded-lg bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/20 border border-border resize-none" />
       </div>
 
-      {/* Features */}
       <div className="rounded-xl bg-card border border-border p-5 space-y-4">
         <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Tag className="w-4 h-4 text-primary" /> Features
@@ -295,7 +287,6 @@ function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraf
         </div>
       </div>
 
-      {/* Submit */}
       <div className="flex gap-3">
         <button onClick={handlePublish} className="flex-1 py-3 rounded-xl bg-gradient-gold text-primary-foreground font-semibold text-sm hover:opacity-90 transition-opacity">
           Publish Listing
@@ -308,32 +299,10 @@ function ManualForm({ form, update, toggleFeature, handlePublish, handleSaveDraf
   );
 }
 
-/* ─── AI Results Panel ─── */
-function AIResultsPanel({ result, loading, expanded, toggle, applyAIToForm }: any) {
-  if (loading) {
-    return (
-      <div className="rounded-xl bg-card border border-border p-16 text-center">
-        <Loader2 className="w-10 h-10 mx-auto text-primary animate-spin mb-4" />
-        <p className="text-sm text-muted-foreground">Analyzing market data & generating your listing...</p>
-      </div>
-    );
-  }
-
-  if (!result) {
-    return (
-      <div className="rounded-xl bg-card border border-border p-16 text-center">
-        <Brain className="w-14 h-14 mx-auto text-muted-foreground/20 mb-4" />
-        <h3 className="font-semibold text-foreground mb-2">No AI Analysis Yet</h3>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Fill in your property details in the Manual Entry tab and click "Generate" to get AI-powered listing copy, pricing, and comprehensive analysis.
-        </p>
-      </div>
-    );
-  }
-
+/* ─── AI Results Inline ─── */
+function AIResultsInline({ result, expanded, toggle, applyAIToForm }: any) {
   return (
     <div className="space-y-4">
-      {/* Apply to form banner */}
       <div className="rounded-xl bg-primary/10 border border-primary/20 p-4 flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-foreground">AI content ready</p>
@@ -344,7 +313,6 @@ function AIResultsPanel({ result, loading, expanded, toggle, applyAIToForm }: an
         </Button>
       </div>
 
-      {/* Generated Listing */}
       {result.listing && (
         <div className="rounded-xl bg-card border border-border p-5">
           <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> Generated Listing</h3>
@@ -368,17 +336,10 @@ function AIResultsPanel({ result, loading, expanded, toggle, applyAIToForm }: an
                 </div>
               </div>
             )}
-            {result.listing.targetBuyer && (
-              <div>
-                <p className="text-xs text-muted-foreground">Target Buyer</p>
-                <p className="text-sm text-foreground">{result.listing.targetBuyer}</p>
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {/* Pricing */}
       {result.pricing && (
         <div className="rounded-xl bg-card border border-border p-5">
           <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2"><DollarSign className="w-4 h-4 text-warning" /> Price Recommendation</h3>
@@ -398,95 +359,6 @@ function AIResultsPanel({ result, loading, expanded, toggle, applyAIToForm }: an
           </div>
           {result.pricing.reasoning && <p className="text-sm text-muted-foreground">{result.pricing.reasoning}</p>}
         </div>
-      )}
-
-      {/* Expandable sections */}
-      {result.marketTrends && (
-        <Section title="Market Trends" icon={<TrendingUp className="w-4 h-4 text-info" />} id="trends" expanded={expanded} toggle={toggle}>
-          {Object.entries(result.marketTrends).map(([k, v]) => (
-            <div key={k} className="flex justify-between text-sm py-1.5 border-b border-border/30 last:border-0">
-              <span className="text-muted-foreground capitalize">{k.replace(/([A-Z])/g, " $1")}</span>
-              <span className="font-medium text-foreground">{String(v)}</span>
-            </div>
-          ))}
-        </Section>
-      )}
-
-      {result.swot && (
-        <Section title="SWOT Analysis" icon={<BarChart3 className="w-4 h-4 text-primary" />} id="swot" expanded={expanded} toggle={toggle}>
-          <div className="grid grid-cols-2 gap-3">
-            <SwotBox label="Strengths" items={result.swot.strengths} color="text-[hsl(var(--success))]" icon={<CheckCircle className="w-3.5 h-3.5" />} />
-            <SwotBox label="Weaknesses" items={result.swot.weaknesses} color="text-destructive" icon={<XCircle className="w-3.5 h-3.5" />} />
-            <SwotBox label="Opportunities" items={result.swot.opportunities} color="text-info" icon={<TrendingUp className="w-3.5 h-3.5" />} />
-            <SwotBox label="Threats" items={result.swot.threats} color="text-warning" icon={<AlertTriangle className="w-3.5 h-3.5" />} />
-          </div>
-        </Section>
-      )}
-
-      {result.investmentScore && (
-        <Section title="Investment Score" icon={<Target className="w-4 h-4 text-warning" />} id="score" expanded={expanded} toggle={toggle}>
-          <div className="grid grid-cols-3 gap-3">
-            {Object.entries(result.investmentScore).map(([k, v]) => (
-              <div key={k} className="text-center p-3 rounded-lg bg-primary/5 border border-primary/10">
-                <p className="text-2xl font-bold text-primary">{v as number}</p>
-                <p className="text-xs text-muted-foreground capitalize">{k}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {result.financials && (
-        <Section title="Financial Metrics" icon={<DollarSign className="w-4 h-4 text-[hsl(var(--success))]" />} id="fin" expanded={expanded} toggle={toggle}>
-          {Object.entries(result.financials).map(([k, v]) => (
-            <div key={k} className="flex justify-between text-sm py-1.5 border-b border-border/30 last:border-0">
-              <span className="text-muted-foreground capitalize">{k.replace(/([A-Z])/g, " $1")}</span>
-              <span className="font-medium text-foreground">{typeof v === "number" ? v.toLocaleString() : String(v)}</span>
-            </div>
-          ))}
-        </Section>
-      )}
-
-      {result.risk && (
-        <Section title="Risk Assessment" icon={<Shield className="w-4 h-4 text-destructive" />} id="risk" expanded={expanded} toggle={toggle}>
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-2xl font-bold text-foreground">{result.risk.overallScore}/100</span>
-            <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${result.risk.level === "low" ? "bg-[hsl(var(--success))]/10 text-[hsl(var(--success))]" : result.risk.level === "high" ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"}`}>
-              {result.risk.level?.toUpperCase()} RISK
-            </span>
-          </div>
-          {result.risk.factors?.map((f: any, i: number) => (
-            <div key={i} className="flex justify-between text-sm py-1.5 border-b border-border/30 last:border-0">
-              <span className="text-muted-foreground">{f.name}</span>
-              <span className="text-foreground font-medium">{f.score}/100</span>
-            </div>
-          ))}
-        </Section>
-      )}
-
-      {result.demographics && (
-        <Section title="Area Demographics" icon={<Users className="w-4 h-4 text-info" />} id="demo" expanded={expanded} toggle={toggle}>
-          {Object.entries(result.demographics).map(([k, v]) => (
-            <div key={k} className="flex justify-between text-sm py-1.5 border-b border-border/30 last:border-0">
-              <span className="text-muted-foreground capitalize">{k.replace(/([A-Z])/g, " $1")}</span>
-              <span className="font-medium text-foreground">{String(v)}</span>
-            </div>
-          ))}
-        </Section>
-      )}
-
-      {result.esg && (
-        <Section title="ESG Score" icon={<Leaf className="w-4 h-4 text-[hsl(var(--success))]" />} id="esg" expanded={expanded} toggle={toggle}>
-          <div className="grid grid-cols-4 gap-2 mb-2">
-            {["score", "environmental", "social", "governance"].map((k) => (
-              <div key={k} className="text-center p-2 rounded-lg bg-[hsl(var(--success))]/5 border border-[hsl(var(--success))]/10">
-                <p className="text-lg font-bold text-[hsl(var(--success))]">{result.esg[k]}</p>
-                <p className="text-xs text-muted-foreground capitalize">{k === "score" ? "Overall" : k}</p>
-              </div>
-            ))}
-          </div>
-          {result.esg.notes && <p className="text-xs text-muted-foreground">{result.esg.notes}</p>}
-        </Section>
       )}
 
       {result.tips && (
@@ -518,19 +390,6 @@ function Section({ title, icon, id, expanded, toggle, children }: {
         {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
       </button>
       {isOpen && <div className="px-5 pb-5">{children}</div>}
-    </div>
-  );
-}
-
-function SwotBox({ label, items, icon, color }: { label: string; items: string[]; icon: React.ReactNode; color: string }) {
-  return (
-    <div className="rounded-lg bg-secondary/20 p-3">
-      <p className={`text-xs font-semibold mb-2 flex items-center gap-1.5 ${color}`}>{icon} {label}</p>
-      <ul className="space-y-1">
-        {items?.map((item: string, i: number) => (
-          <li key={i} className="text-xs text-muted-foreground">• {item}</li>
-        ))}
-      </ul>
     </div>
   );
 }
