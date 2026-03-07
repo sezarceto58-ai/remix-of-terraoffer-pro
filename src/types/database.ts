@@ -64,6 +64,7 @@ export interface DbLead {
   phone?: string;
   source?: string;
   status: string;
+  stage?: string;
   notes?: string;
   property_id?: string;
   created_at: string;

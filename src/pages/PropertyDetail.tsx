@@ -26,7 +26,7 @@ export default function PropertyDetail() {
   // Increment view counter
   useEffect(() => {
     if (id) {
-      supabase.rpc("increment_property_views", { p_property_id: id });
+      (supabase as any).rpc("increment_property_views", { p_property_id: id });
     }
   }, [id]);
 
