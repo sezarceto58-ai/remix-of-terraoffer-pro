@@ -8,7 +8,7 @@ export function useFavorites() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await supabase.from("favorites").select("*, property:properties(*)").eq("user_id", user.id).order("created_at", { ascending: false });
+      const { data, error } = await (supabase as any).from("favorites").select("*, property:properties(*)").eq("user_id", user.id).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((f: any) => f.property).filter(Boolean) as DbProperty[];
     },
@@ -21,13 +21,12 @@ export function useToggleFavorite() {
     mutationFn: async (propertyId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      // Check if already favorited
-      const { data: existing } = await supabase.from("favorites").select("id").eq("user_id", user.id).eq("property_id", propertyId).maybeSingle();
+      const { data: existing } = await (supabase as any).from("favorites").select("id").eq("user_id", user.id).eq("property_id", propertyId).maybeSingle();
       if (existing) {
-        await supabase.from("favorites").delete().eq("id", existing.id);
+        await (supabase as any).from("favorites").delete().eq("id", existing.id);
         return { action: "removed" as const };
       } else {
-        await supabase.from("favorites").insert({ user_id: user.id, property_id: propertyId } as any);
+        await (supabase as any).from("favorites").insert({ user_id: user.id, property_id: propertyId });
         return { action: "added" as const };
       }
     },
