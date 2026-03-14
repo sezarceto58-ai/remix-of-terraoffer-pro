@@ -6,7 +6,7 @@ export function useProperties(filters?: { city?: string; type?: string; search?:
   return useQuery({
     queryKey: ["properties", filters],
     queryFn: async () => {
-      let q = (supabase as any).from("properties").select("*").eq("status", "active").order("created_at", { ascending: false });
+      let q = supabase.from("properties").select("*").eq("status", "active").order("created_at", { ascending: false });
       if (filters?.city && filters.city !== "all") q = q.eq("city", filters.city);
       if (filters?.type && filters.type !== "all") q = q.eq("property_type", filters.type);
       if (filters?.search) q = q.or(`title.ilike.%${filters.search}%,city.ilike.%${filters.search}%`);
@@ -23,7 +23,7 @@ export function useMyProperties() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await (supabase as any).from("properties").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("properties").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as DbProperty[];
     },
@@ -35,7 +35,7 @@ export function useProperty(id: string | undefined) {
     queryKey: ["property", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("properties").select("*, property_images(*)").eq("id", id!).single();
+      const { data, error } = await supabase.from("properties").select("*, property_images(*)").eq("id", id!).single();
       if (error) throw error;
       return data as DbProperty;
     },
@@ -48,7 +48,7 @@ export function useCreateProperty() {
     mutationFn: async (property: Partial<DbProperty>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const { data, error } = await (supabase as any).from("properties").insert({ ...property, user_id: user.id }).select().single();
+      const { data, error } = await supabase.from("properties").insert({ ...property, user_id: user.id } as any).select().single();
       if (error) throw error;
       return data;
     },
@@ -60,7 +60,7 @@ export function useUpdateProperty() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DbProperty> & { id: string }) => {
-      const { data, error } = await (supabase as any).from("properties").update(updates).eq("id", id).select().single();
+      const { data, error } = await supabase.from("properties").update(updates as any).eq("id", id).select().single();
       if (error) throw error;
       return data;
     },
@@ -72,7 +72,7 @@ export function useDeleteProperty() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("properties").delete().eq("id", id);
+      const { error } = await supabase.from("properties").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); qc.invalidateQueries({ queryKey: ["my-properties"] }); },

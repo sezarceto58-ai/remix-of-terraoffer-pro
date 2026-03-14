@@ -8,7 +8,7 @@ export function useLeads() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await (supabase as any).from("leads").select("*").eq("agent_id", user.id).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("leads").select("*").eq("agent_id", user.id).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as DbLead[];
     },
@@ -19,7 +19,7 @@ export function useUpdateLead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<DbLead> & { id: string }) => {
-      const { data, error } = await (supabase as any).from("leads").update(updates).eq("id", id).select().single();
+      const { data, error } = await supabase.from("leads").update(updates as any).eq("id", id).select().single();
       if (error) throw error;
       return data;
     },
@@ -33,7 +33,7 @@ export function useCreateLead() {
     mutationFn: async (lead: Partial<DbLead>) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const { data, error } = await (supabase as any).from("leads").insert({ ...lead, agent_id: user.id }).select().single();
+      const { data, error } = await supabase.from("leads").insert({ ...lead, agent_id: user.id } as any).select().single();
       if (error) throw error;
       return data;
     },

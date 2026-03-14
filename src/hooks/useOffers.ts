@@ -8,7 +8,7 @@ export function useMyOffers() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await (supabase as any).from("offers").select("*").eq("buyer_id", user.id).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("offers").select("*").eq("buyer_id", user.id).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as DbOffer[];
     },
@@ -21,7 +21,7 @@ export function useSellerOffers() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await (supabase as any).from("offers").select("*").eq("seller_id", user.id).order("seriousness_score", { ascending: false });
+      const { data, error } = await supabase.from("offers").select("*").eq("seller_id", user.id).order("seriousness_score", { ascending: false });
       if (error) throw error;
       return (data ?? []) as DbOffer[];
     },
@@ -32,6 +32,7 @@ export function useCreateOffer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (offer: Partial<DbOffer>) => {
+      // IMPORTANT: offer creation is enforced server-side (tier limits, elite-only options)
       const { data, error } = await supabase.functions.invoke("create-offer", {
         body: offer,
       });
@@ -47,7 +48,7 @@ export function useUpdateOfferStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, status, seller_note, counter_price }: { id: string; status: string; seller_note?: string; counter_price?: number }) => {
-      const { data, error } = await (supabase as any).from("offers").update({ status, seller_note, counter_price }).eq("id", id).select().single();
+      const { data, error } = await supabase.from("offers").update({ status, seller_note, counter_price } as any).eq("id", id).select().single();
       if (error) throw error;
       return data;
     },

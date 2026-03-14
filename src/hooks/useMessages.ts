@@ -9,12 +9,14 @@ export function useConversations() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-      const { data, error } = await (supabase as any)
+      // Get distinct conversations with last message
+      const { data, error } = await supabase
         .from("messages")
         .select("*")
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
       if (error) throw error;
+      // Group by conversation_id, take latest
       const convMap = new Map<string, DbMessage[]>();
       for (const msg of (data ?? []) as DbMessage[]) {
         const arr = convMap.get(msg.conversation_id) || [];
@@ -40,7 +42,7 @@ export function useConversationMessages(conversationId: string | null) {
     queryKey: ["messages", conversationId],
     enabled: !!conversationId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("messages")
         .select("*")
         .eq("conversation_id", conversationId!)
@@ -78,10 +80,10 @@ export function useSendMessage() {
     mutationFn: async (msg: { conversation_id: string; recipient_id: string; content: string; property_id?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-      const { data, error } = await (supabase as any).from("messages").insert({
+      const { data, error } = await supabase.from("messages").insert({
         ...msg,
         sender_id: user.id,
-      }).select().single();
+      } as any).select().single();
       if (error) throw error;
       return data;
     },
