@@ -20,6 +20,9 @@ import CompareListings from "@/pages/CompareListings";
 import Alerts from "@/pages/Alerts";
 import InvestorTools from "@/pages/InvestorTools";
 import BuyerPropertyAnalysis from "@/pages/BuyerPropertyAnalysis";
+import MarketIntelligence from "@/pages/MarketIntelligence";
+import SyndicationDeals from "@/pages/SyndicationDeals";
+import SyndicationDealDetail from "@/pages/SyndicationDealDetail";
 
 // Seller pages
 import SellerDashboard from "@/pages/SellerDashboard";
@@ -59,11 +62,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Public routes (no layout) */}
+          {/* Public routes */}
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          {/* Protected routes with layout */}
+
+          {/* Buyer / Investor */}
           <Route
             path="/buyer/*"
             element={
@@ -80,6 +84,9 @@ const App = () => (
                       <Route path="/messages" element={<Messaging />} />
                       <Route path="/investor" element={<InvestorTools />} />
                       <Route path="/analysis/:id" element={<BuyerPropertyAnalysis />} />
+                      <Route path="/market-intelligence" element={<MarketIntelligence />} />
+                      <Route path="/syndication" element={<SyndicationDeals />} />
+                      <Route path="/syndication/:id" element={<SyndicationDealDetail />} />
                     </Routes>
                   </Layout>
                 </RequireRole>
@@ -89,6 +96,7 @@ const App = () => (
 
           <Route path="/property/:id" element={<Layout><PropertyDetail /></Layout>} />
 
+          {/* Seller / Agent */}
           <Route
             path="/seller/*"
             element={
@@ -112,6 +120,7 @@ const App = () => (
             }
           />
 
+          {/* Developer */}
           <Route
             path="/developer/*"
             element={

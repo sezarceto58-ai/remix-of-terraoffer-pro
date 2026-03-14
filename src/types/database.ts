@@ -30,6 +30,7 @@ export interface DbProperty {
   user_id: string;
   lat?: number;
   lng?: number;
+  year_built?: number | null;
   created_at: string;
   updated_at?: string;
   property_images?: { id: string; url: string; position?: number }[];

@@ -37,10 +37,12 @@ const buyerNav = [
   ]},
   { label: "Offers & Deals", items: [
     { path: "/buyer/offers", icon: BadgeDollarSign, label: "My Offers" },
+    { path: "/buyer/syndication", icon: Briefcase, label: "Syndication" },
     { path: "/buyer/messages", icon: MessageSquare, label: "Messages" },
   ]},
-  { label: "Investor Tools", items: [
-    { path: "/buyer/investor", icon: TrendingUp, label: "AI Intelligence" },
+  { label: "Intelligence", items: [
+    { path: "/buyer/investor", icon: TrendingUp, label: "AI Portfolio" },
+    { path: "/buyer/market-intelligence", icon: BarChart3, label: "Market Intel" },
   ]},
 ];
 
