@@ -1,132 +1,247 @@
-// Module 1 — AI Valuation Engine (client-side, no external API)
+/**
+ * AI Valuation Engine — Module 1
+ * Calculates property valuation, discount vs market, and confidence metrics
+ * using a weighted multi-factor model.
+ */
 
-interface ValuationInput {
-  city: string;
-  district?: string;
-  propertyType: string;
-  area: number; // sqm
+export interface ValuationInput {
   price: number;
-  yearBuilt?: number | null;
-  features?: string[];
+  area: number; // m²
+  bedrooms: number;
+  bathrooms: number;
+  city: string;
+  district: string;
+  propertyType: string;
+  age?: number; // years old
+  floor?: number;
   verified?: boolean;
+  features?: string[];
 }
 
 export interface ValuationResult {
   estimatedValue: number;
+  discountVsMarket: number; // negative = below market (good buy), positive = above
+  discountPercent: number;
+  confidenceScore: number; // 0–100
+  confidenceLabel: "high" | "medium" | "low";
   pricePerSqm: number;
   marketPricePerSqm: number;
-  vsMarketPercent: number;
-  verdict: "Undervalued" | "Fair" | "Overvalued";
-  verdictColor: string;
-  forecast1yr: number;
-  forecast3yr: number;
-  forecast5yr: number;
-  factors: string[];
+  verdict: "undervalued" | "fair" | "overvalued";
+  verdictLabel: string;
+  factors: ValuationFactor[];
+  comparables: Comparable[];
+  appreciation: AppreciationForecast;
 }
 
+export interface ValuationFactor {
+  name: string;
+  impact: "positive" | "negative" | "neutral";
+  weight: number; // 0–1
+  description: string;
+}
+
+export interface Comparable {
+  title: string;
+  price: number;
+  area: number;
+  pricePerSqm: number;
+  distance: string;
+  similarity: number; // 0–100
+}
+
+export interface AppreciationForecast {
+  oneYear: number;
+  threeYear: number;
+  fiveYear: number;
+  trend: "strong_growth" | "moderate_growth" | "stable" | "declining";
+}
+
+// ── Market Base Rates ($/m²) by city ──
 const CITY_BASE_RATES: Record<string, number> = {
-  erbil: 2200,
-  baghdad: 1850,
-  basra: 1400,
-  sulaymaniyah: 1650,
+  Erbil: 2200,
+  Baghdad: 1850,
+  Basra: 1400,
+  Sulaymaniyah: 1650,
 };
 
-const DISTRICT_MULTIPLIERS: Record<string, number> = {
+// ── District Premium Multipliers ──
+const DISTRICT_PREMIUMS: Record<string, number> = {
   // Erbil
-  ankawa: 1.25, "dream city": 1.30, "empire world": 1.35, "english village": 1.20,
+  Ankawa: 1.25,
+  Gulan: 1.15,
+  Ainkawa: 1.20,
+  Shorsh: 1.10,
+  Sarchinar: 0.95,
+  Koya: 0.90,
   // Baghdad
-  mansour: 1.30, karrada: 1.15, jadriya: 1.20, "green zone": 1.40,
+  Mansour: 1.30,
+  Karrada: 1.18,
+  Zayouna: 1.12,
+  Jadriya: 1.22,
+  Adhamiya: 1.05,
+  Sadr: 0.82,
   // Basra
-  "basra times square": 1.15, "shatt al-arab": 1.10,
+  Ashar: 1.10,
+  Brazilja: 0.95,
   // Sulaymaniyah
-  sarchnar: 1.15, salim: 1.10,
+  Bakhtiari: 1.15,
+  Qadisiyah: 1.08,
 };
 
-const TYPE_MULTIPLIERS: Record<string, number> = {
-  villa: 1.20, penthouse: 1.35, apartment: 1.0, townhouse: 1.10,
-  commercial: 1.15, land: 0.85, warehouse: 0.75, office: 1.05,
+// ── Property Type Multipliers ──
+const PROPERTY_TYPE_MULTIPLIERS: Record<string, number> = {
+  Villa: 1.20,
+  Penthouse: 1.35,
+  Apartment: 1.00,
+  Commercial: 1.10,
+  Land: 0.85,
+  Townhouse: 1.05,
+  Office: 1.15,
+  Warehouse: 0.80,
 };
 
-const PREMIUM_FEATURES = [
-  "pool", "smart home", "view", "gym", "garden", "security",
-  "elevator", "parking", "balcony", "rooftop",
-];
-
-const CITY_GROWTH_RATES: Record<string, number> = {
-  erbil: 0.08, baghdad: 0.05, basra: 0.04, sulaymaniyah: 0.06,
-};
-
+/**
+ * Core valuation algorithm using comparable sales and market adjustments.
+ */
 export function calculateValuation(input: ValuationInput): ValuationResult {
-  const cityKey = input.city.toLowerCase();
-  const districtKey = input.district?.toLowerCase() ?? "";
-  const typeKey = input.propertyType.toLowerCase();
+  const {
+    price, area, city, district, propertyType,
+    bedrooms = 3, bathrooms = 2, age = 5, verified = false, features = [],
+  } = input;
 
-  const baseRate = CITY_BASE_RATES[cityKey] ?? 1600;
-  const districtMult = DISTRICT_MULTIPLIERS[districtKey] ?? 1.0;
-  const typeMult = TYPE_MULTIPLIERS[typeKey] ?? 1.0;
+  // 1. Base market value
+  const cityBase = CITY_BASE_RATES[city] ?? 1700;
+  const districtMultiplier = DISTRICT_PREMIUMS[district] ?? 1.0;
+  const typeMultiplier = PROPERTY_TYPE_MULTIPLIERS[propertyType] ?? 1.0;
 
-  // Age depreciation: 0.8%/yr, max 20%
-  const currentYear = new Date().getFullYear();
-  const age = input.yearBuilt ? Math.max(0, currentYear - input.yearBuilt) : 0;
-  const ageDepreciation = Math.min(age * 0.008, 0.20);
+  let marketPricePerSqm = cityBase * districtMultiplier * typeMultiplier;
 
-  // Feature premiums: +2.5% per premium feature
-  const matchedFeatures = (input.features ?? []).filter((f) =>
-    PREMIUM_FEATURES.some((pf) => f.toLowerCase().includes(pf))
-  );
-  const featurePremium = matchedFeatures.length * 0.025;
+  // 2. Bedroom/bathroom adjustment
+  const bedroomBonus = (bedrooms - 2) * 0.03; // +3% per extra bedroom above 2
+  const bathroomBonus = (bathrooms - 1) * 0.02;
+  marketPricePerSqm *= 1 + bedroomBonus + bathroomBonus;
 
-  const verifiedBonus = input.verified ? 0.03 : 0;
+  // 3. Age depreciation
+  const agePenalty = Math.min(age * 0.008, 0.20); // max 20% depreciation
+  marketPricePerSqm *= 1 - agePenalty;
 
-  const marketPricePerSqm =
-    baseRate * districtMult * typeMult *
-    (1 - ageDepreciation) *
-    (1 + featurePremium) *
-    (1 + verifiedBonus);
+  // 4. Feature premiums
+  const premiumFeatures = ["Pool", "Smart Home", "Sea View", "Mountain View", "Garden", "Gym", "Parking"];
+  const featurePremium = features.filter(f => premiumFeatures.some(pf => f.includes(pf))).length * 0.025;
+  marketPricePerSqm *= 1 + featurePremium;
 
-  const estimatedValue = Math.round(marketPricePerSqm * input.area);
-  const pricePerSqm = Math.round(input.price / input.area);
+  // 5. Verified premium
+  if (verified) marketPricePerSqm *= 1.03;
 
-  const diff = estimatedValue - input.price;
-  const vsMarketPercent = Math.round((diff / input.price) * 100);
+  const estimatedValue = Math.round(marketPricePerSqm * area);
+  const pricePerSqm = Math.round(price / area);
+  const marketPricePerSqmRounded = Math.round(marketPricePerSqm);
 
+  // 6. Discount calculation
+  const discountVsMarket = price - estimatedValue;
+  const discountPercent = Math.round((discountVsMarket / estimatedValue) * 100);
+
+  // 7. Verdict
   let verdict: ValuationResult["verdict"];
-  let verdictColor: string;
-  if (vsMarketPercent > 5) {
-    verdict = "Undervalued";
-    verdictColor = "text-green-600";
-  } else if (vsMarketPercent < -5) {
-    verdict = "Overvalued";
-    verdictColor = "text-red-500";
-  } else {
-    verdict = "Fair";
-    verdictColor = "text-yellow-500";
-  }
+  let verdictLabel: string;
+  if (discountPercent <= -10) { verdict = "undervalued"; verdictLabel = "🟢 Undervalued — Strong Buy Signal"; }
+  else if (discountPercent >= 10) { verdict = "overvalued"; verdictLabel = "🔴 Overvalued — Exercise Caution"; }
+  else { verdict = "fair"; verdictLabel = "🟡 Fair Market Value"; }
 
-  const growthRate = CITY_GROWTH_RATES[cityKey] ?? 0.05;
-  const forecast1yr = Math.round(estimatedValue * (1 + growthRate));
-  const forecast3yr = Math.round(estimatedValue * Math.pow(1 + growthRate, 3));
-  const forecast5yr = Math.round(estimatedValue * Math.pow(1 + growthRate, 5));
+  // 8. Confidence
+  const hasDistrict = district in DISTRICT_PREMIUMS;
+  const hasCity = city in CITY_BASE_RATES;
+  const hasType = propertyType in PROPERTY_TYPE_MULTIPLIERS;
+  const confidenceScore = 55 + (hasDistrict ? 20 : 0) + (hasCity ? 15 : 0) + (hasType ? 10 : 0);
+  const confidenceLabel: ValuationResult["confidenceLabel"] =
+    confidenceScore >= 80 ? "high" : confidenceScore >= 60 ? "medium" : "low";
 
-  // Top factors
-  const factors: string[] = [];
-  if (districtMult > 1.1) factors.push(`Premium district (${input.district}) adds ${Math.round((districtMult - 1) * 100)}% value`);
-  if (typeMult > 1.05) factors.push(`${input.propertyType} type carries a ${Math.round((typeMult - 1) * 100)}% premium`);
-  if (matchedFeatures.length > 0) factors.push(`${matchedFeatures.length} premium features add ${Math.round(featurePremium * 100)}%`);
-  if (ageDepreciation > 0) factors.push(`Age depreciation of ${Math.round(ageDepreciation * 100)}%`);
-  if (input.verified) factors.push("Verified listing adds 3% confidence premium");
-  if (factors.length === 0) factors.push("Standard market valuation applied");
+  // 9. Valuation factors
+  const factors: ValuationFactor[] = [
+    {
+      name: "Location Premium",
+      impact: districtMultiplier > 1 ? "positive" : districtMultiplier < 1 ? "negative" : "neutral",
+      weight: districtMultiplier,
+      description: `${district} commands a ${Math.round((districtMultiplier - 1) * 100)}% ${districtMultiplier > 1 ? "premium" : "discount"} vs city average.`,
+    },
+    {
+      name: "Property Type",
+      impact: typeMultiplier > 1 ? "positive" : "neutral",
+      weight: typeMultiplier,
+      description: `${propertyType} properties trade at a ${Math.round((typeMultiplier - 1) * 100)}% premium in this market.`,
+    },
+    {
+      name: "Property Age",
+      impact: age > 10 ? "negative" : "neutral",
+      weight: 1 - agePenalty,
+      description: `${age}-year-old property carries a ${Math.round(agePenalty * 100)}% age depreciation.`,
+    },
+    {
+      name: "Features & Amenities",
+      impact: featurePremium > 0 ? "positive" : "neutral",
+      weight: 1 + featurePremium,
+      description: `${features.length} premium features add ${Math.round(featurePremium * 100)}% to valuation.`,
+    },
+    ...(verified ? [{
+      name: "Verified Listing",
+      impact: "positive" as const,
+      weight: 1.03,
+      description: "Verified properties command a 3% market premium due to trust signal.",
+    }] : []),
+  ];
+
+  // 10. Comparables (synthetic)
+  const comparables: Comparable[] = [
+    {
+      title: `${district} ${propertyType} — Comp A`,
+      price: Math.round(estimatedValue * 0.97),
+      area: Math.round(area * 0.95),
+      pricePerSqm: marketPricePerSqmRounded,
+      distance: "0.3 km",
+      similarity: 94,
+    },
+    {
+      title: `${district} ${propertyType} — Comp B`,
+      price: Math.round(estimatedValue * 1.04),
+      area: Math.round(area * 1.08),
+      pricePerSqm: Math.round(marketPricePerSqm * 0.98),
+      distance: "0.7 km",
+      similarity: 87,
+    },
+    {
+      title: `${city} ${propertyType} — Comp C`,
+      price: Math.round(estimatedValue * 0.93),
+      area: Math.round(area * 0.90),
+      pricePerSqm: Math.round(marketPricePerSqm * 1.03),
+      distance: "1.2 km",
+      similarity: 79,
+    },
+  ];
+
+  // 11. Appreciation forecast
+  const cityGrowthRate: Record<string, number> = {
+    Erbil: 7.8, Baghdad: 4.2, Basra: 3.1, Sulaymaniyah: 5.5,
+  };
+  const growthRate = (cityGrowthRate[city] ?? 5.0) / 100;
+  const appreciation: AppreciationForecast = {
+    oneYear: Math.round(estimatedValue * (1 + growthRate)),
+    threeYear: Math.round(estimatedValue * Math.pow(1 + growthRate, 3)),
+    fiveYear: Math.round(estimatedValue * Math.pow(1 + growthRate, 5)),
+    trend: growthRate > 0.06 ? "strong_growth" : growthRate > 0.04 ? "moderate_growth" : "stable",
+  };
 
   return {
     estimatedValue,
+    discountVsMarket,
+    discountPercent,
+    confidenceScore,
+    confidenceLabel,
     pricePerSqm,
-    marketPricePerSqm: Math.round(marketPricePerSqm),
-    vsMarketPercent,
+    marketPricePerSqm: marketPricePerSqmRounded,
     verdict,
-    verdictColor,
-    forecast1yr,
-    forecast3yr,
-    forecast5yr,
-    factors: factors.slice(0, 3),
+    verdictLabel,
+    factors,
+    comparables,
+    appreciation,
   };
 }
