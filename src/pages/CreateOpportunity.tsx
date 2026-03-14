@@ -2,23 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Sparkles, Loader2, Brain, Lock } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2 } from "lucide-react";
 
 export default function CreateOpportunity() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { tier } = useSubscription();
-  const isPaid = tier === "pro" || tier === "elite";
   const [saving, setSaving] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<any>(null);
   const [form, setForm] = useState({
     title: "", description: "", investment_type: "buy", property_type: "residential",
     city: "", address: "", country: "Iraq", entry_price: 0, currency: "USD",
@@ -35,11 +30,11 @@ export default function CreateOpportunity() {
       return;
     }
     setSaving(true);
-    const { data, error } = await (supabase.from("opportunities") as any).insert({
+    const { data, error } = await (supabase.from("opportunities" as any).insert({
       ...form,
       user_id: user.id,
       location: { lat: 0, lng: 0 },
-    }).select("id").single();
+    }).select("id").single() as any);
 
     if (error) {
       toast.error("Failed to create opportunity");
@@ -51,35 +46,6 @@ export default function CreateOpportunity() {
     setSaving(false);
   };
 
-  const handleAIGenerate = async () => {
-    if (!isPaid) {
-      toast.error("Upgrade to Pro or Elite to use AI-powered opportunity analysis.");
-      navigate("/pricing");
-      return;
-    }
-    if (!form.title.trim()) {
-      toast.error("Please add a title first");
-      return;
-    }
-    setAiLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("opportunity-ai", {
-        body: { type: "full_analysis", opportunity: form },
-      });
-      if (error) throw error;
-      if (data?.error) {
-        toast.error(data.error);
-      } else {
-        setAiResult(data.analysis);
-        toast.success("🧠 AI Analysis complete!");
-      }
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
@@ -89,66 +55,6 @@ export default function CreateOpportunity() {
           <p className="text-sm text-muted-foreground">Create an investment opportunity workspace</p>
         </div>
       </div>
-
-      {/* AI Generate Banner */}
-      <div className={`rounded-xl border p-4 flex items-center justify-between ${isPaid ? "border-dashed border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
-        <div className="flex items-center gap-3">
-          <Brain className="w-5 h-5 text-primary" />
-          <div>
-            <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-              AI-Powered Analysis
-              {!isPaid && <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning text-[10px] font-bold flex items-center gap-1"><Lock className="w-3 h-3" /> PRO</span>}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {isPaid
-                ? "Fill in basic info, then generate full AI analysis & presentation"
-                : "Upgrade to generate full AI-powered investment analysis"}
-            </p>
-          </div>
-        </div>
-        <Button
-          onClick={isPaid ? handleAIGenerate : () => navigate("/pricing")}
-          disabled={aiLoading}
-          size="sm"
-          className={isPaid ? "bg-gradient-gold text-primary-foreground hover:opacity-90 border-0" : ""}
-          variant={isPaid ? "default" : "outline"}
-        >
-          {aiLoading ? (
-            <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Analyzing...</>
-          ) : isPaid ? (
-            <><Brain className="w-4 h-4 mr-1" /> Generate</>
-          ) : (
-            <><Lock className="w-4 h-4 mr-1" /> Upgrade</>
-          )}
-        </Button>
-      </div>
-
-      {/* AI Results */}
-      {aiResult && (
-        <div className="rounded-xl bg-card border border-primary/20 p-5 space-y-4">
-          <h3 className="font-semibold text-foreground flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" /> AI Analysis Results</h3>
-          {aiResult.summary && <p className="text-sm text-foreground">{aiResult.summary}</p>}
-          {aiResult.recommendation && (
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold ${
-              aiResult.recommendation === "BUY" ? "bg-success/10 text-success" :
-              aiResult.recommendation === "HOLD" ? "bg-warning/10 text-warning" :
-              "bg-destructive/10 text-destructive"
-            }`}>
-              Recommendation: {aiResult.recommendation}
-            </div>
-          )}
-          {aiResult.financials && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {Object.entries(aiResult.financials).slice(0, 8).map(([k, v]) => (
-                <div key={k} className="p-3 rounded-lg bg-secondary/30 text-center">
-                  <p className="text-xs text-muted-foreground capitalize">{k.replace(/([A-Z])/g, " $1")}</p>
-                  <p className="text-sm font-bold text-foreground mt-1">{typeof v === "number" ? v.toLocaleString() : String(v)}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="rounded-xl bg-card border border-border p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -216,6 +122,8 @@ export default function CreateOpportunity() {
                 <SelectItem value="USD">USD</SelectItem>
                 <SelectItem value="IQD">IQD (Iraqi Dinar)</SelectItem>
                 <SelectItem value="EUR">EUR</SelectItem>
+                <SelectItem value="GBP">GBP</SelectItem>
+                <SelectItem value="AED">AED</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -258,7 +166,7 @@ export default function CreateOpportunity() {
           <Button variant="outline" onClick={() => navigate(-1)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={saving} className="bg-gradient-gold text-primary-foreground shadow-gold">
             {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
-            Create Opportunity
+            Create & Analyze
           </Button>
         </div>
       </div>

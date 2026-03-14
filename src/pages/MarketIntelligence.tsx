@@ -1,99 +1,105 @@
-import { useState, useMemo } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+/**
+ * Market Intelligence Dashboard — simplified 3-tab layout
+ */
+import { useState, useEffect } from "react";
+import { BarChart3, TrendingUp, MapPin, DollarSign, Flame, Building2 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import StatsCard from "@/components/StatsCard";
 import { trackMarketIntelView } from "@/services/dataMoat";
 
-const CITIES = ["Erbil", "Baghdad", "Basra", "Sulaymaniyah"] as const;
+const cities = ["Erbil", "Baghdad", "Basra", "Sulaymaniyah"];
 
-// Hardcoded market data — replace with API in production
-const NEIGHBORHOODS: Record<string, { name: string; demand: number; yield: number; forecast12m: number }[]> = {
+const neighborhoodData: Record<string, {
+  name: string; avgPrice: number; priceChange: number;
+  rentalYield: number; demandScore: number; daysOnMarket: number; forecast1yr: number;
+}[]> = {
   Erbil: [
-    { name: "Ankawa", demand: 92, yield: 8.5, forecast12m: 12 },
-    { name: "Dream City", demand: 88, yield: 7.8, forecast12m: 10 },
-    { name: "Empire World", demand: 85, yield: 9.2, forecast12m: 14 },
-    { name: "English Village", demand: 78, yield: 6.5, forecast12m: 8 },
-    { name: "Erbil Center", demand: 72, yield: 5.8, forecast12m: 6 },
+    { name: "Ankawa",     avgPrice: 2650, priceChange: 9.2,  rentalYield: 7.8,  demandScore: 92, daysOnMarket: 18, forecast1yr: 10.1 },
+    { name: "Gulan",      avgPrice: 2400, priceChange: 7.8,  rentalYield: 8.2,  demandScore: 85, daysOnMarket: 22, forecast1yr: 8.9 },
+    { name: "Shorsh",     avgPrice: 2100, priceChange: 6.1,  rentalYield: 9.1,  demandScore: 78, daysOnMarket: 28, forecast1yr: 7.4 },
+    { name: "Sarchinar",  avgPrice: 1850, priceChange: 4.3,  rentalYield: 9.8,  demandScore: 65, daysOnMarket: 35, forecast1yr: 5.8 },
+    { name: "Koya",       avgPrice: 1580, priceChange: 2.1,  rentalYield: 10.5, demandScore: 48, daysOnMarket: 52, forecast1yr: 3.9 },
   ],
   Baghdad: [
-    { name: "Mansour", demand: 90, yield: 7.2, forecast12m: 9 },
-    { name: "Karrada", demand: 82, yield: 6.8, forecast12m: 7 },
-    { name: "Jadriya", demand: 76, yield: 7.5, forecast12m: 8 },
-    { name: "Zayouna", demand: 68, yield: 5.5, forecast12m: 5 },
+    { name: "Mansour",    avgPrice: 2350, priceChange: 6.5,  rentalYield: 6.9,  demandScore: 88, daysOnMarket: 21, forecast1yr: 7.2 },
+    { name: "Karrada",    avgPrice: 2100, priceChange: 5.2,  rentalYield: 7.4,  demandScore: 82, daysOnMarket: 25, forecast1yr: 6.1 },
+    { name: "Jadriya",    avgPrice: 2280, priceChange: 5.8,  rentalYield: 6.5,  demandScore: 79, daysOnMarket: 29, forecast1yr: 6.5 },
+    { name: "Zayouna",    avgPrice: 1960, priceChange: 4.1,  rentalYield: 7.8,  demandScore: 70, daysOnMarket: 33, forecast1yr: 4.9 },
+    { name: "Adhamiya",   avgPrice: 1720, priceChange: 3.2,  rentalYield: 8.3,  demandScore: 61, daysOnMarket: 41, forecast1yr: 3.8 },
+    { name: "Sadr City",  avgPrice: 1150, priceChange: 1.8,  rentalYield: 11.2, demandScore: 44, daysOnMarket: 58, forecast1yr: 2.4 },
   ],
   Basra: [
-    { name: "Times Square", demand: 74, yield: 6.0, forecast12m: 7 },
-    { name: "Shatt al-Arab", demand: 70, yield: 5.5, forecast12m: 6 },
-    { name: "Basra Center", demand: 62, yield: 4.8, forecast12m: 4 },
+    { name: "Ashar",      avgPrice: 1540, priceChange: 4.8,  rentalYield: 8.9,  demandScore: 73, daysOnMarket: 31, forecast1yr: 5.6 },
+    { name: "Brazilja",   avgPrice: 1290, priceChange: 2.9,  rentalYield: 10.1, demandScore: 58, daysOnMarket: 45, forecast1yr: 3.5 },
   ],
   Sulaymaniyah: [
-    { name: "Sarchnar", demand: 80, yield: 7.0, forecast12m: 9 },
-    { name: "Salim", demand: 74, yield: 6.2, forecast12m: 7 },
-    { name: "Bakhtiari", demand: 68, yield: 5.8, forecast12m: 6 },
+    { name: "Bakhtiari",  avgPrice: 1890, priceChange: 7.2,  rentalYield: 7.5,  demandScore: 80, daysOnMarket: 24, forecast1yr: 8.3 },
+    { name: "Qadisiyah",  avgPrice: 1650, priceChange: 5.4,  rentalYield: 8.6,  demandScore: 71, daysOnMarket: 30, forecast1yr: 6.4 },
   ],
 };
 
-const CITY_OUTLOOK: Record<string, { yr1: number; yr3: number; yr5: number }> = {
-  Erbil: { yr1: 8, yr3: 28, yr5: 48 },
-  Baghdad: { yr1: 5, yr3: 18, yr5: 32 },
-  Basra: { yr1: 4, yr3: 14, yr5: 24 },
-  Sulaymaniyah: { yr1: 6, yr3: 22, yr5: 38 },
-};
+const cityForecasts = [
+  { city: "Erbil",           y1: 8.9,  y3: 28.4, y5: 51.2, trend: "Strong Growth",    color: "text-emerald-600 dark:text-emerald-400" },
+  { city: "Baghdad",         y1: 6.1,  y3: 19.5, y5: 34.6, trend: "Moderate Growth",  color: "text-primary" },
+  { city: "Sulaymaniyah",    y1: 7.4,  y3: 23.8, y5: 42.1, trend: "Moderate Growth",  color: "text-primary" },
+  { city: "Basra",           y1: 4.8,  y3: 14.9, y5: 26.3, trend: "Stable",           color: "text-amber-600 dark:text-amber-400" },
+];
 
-const SIGNALS: Record<string, { type: "bullish" | "bearish" | "neutral"; text: string }[]> = {
-  Erbil: [
-    { type: "bullish", text: "New airport terminal expansion accelerating demand in Ankawa corridor" },
-    { type: "bullish", text: "Foreign direct investment up 23% YoY in Kurdistan Region" },
-    { type: "neutral", text: "Building permit approvals steady at 2024 levels" },
-    { type: "bearish", text: "Oversupply of luxury apartments in Empire World district" },
-  ],
-  Baghdad: [
-    { type: "bullish", text: "Metro transit project boosting Mansour and Karrada values" },
-    { type: "neutral", text: "Government infrastructure spending holding steady" },
-    { type: "bearish", text: "Rental yield compression in central districts" },
-    { type: "neutral", text: "New commercial zoning regulations under review" },
-  ],
-  Basra: [
-    { type: "bullish", text: "Port modernization driving commercial real estate demand" },
-    { type: "neutral", text: "Residential permits at average levels" },
-    { type: "bearish", text: "Water infrastructure concerns impacting southern districts" },
-    { type: "bullish", text: "Oil sector workforce housing demand increasing" },
-  ],
-  Sulaymaniyah: [
-    { type: "bullish", text: "University expansion driving rental demand in Sarchnar" },
-    { type: "bullish", text: "Tourism sector growth supporting hospitality investments" },
-    { type: "neutral", text: "Stable pricing with moderate appreciation" },
-    { type: "bearish", text: "Limited land availability constraining new developments" },
-  ],
-};
+const marketSignals = [
+  { type: "bullish", headline: "Rising demand in Ankawa", detail: "Avg days-on-market dropped from 28 → 18. Search volume +34% MoM." },
+  { type: "bearish", headline: "Yield compression in Mansour", detail: "Prices rising faster than rents — yield fell 0.4% over 3 months." },
+  { type: "neutral", headline: "New supply — Sulaymaniyah", detail: "12 new developments announced. May moderate short-term price growth." },
+  { type: "bullish", headline: "Foreign investment — Erbil", detail: "Expat buyer inquiries +22% QoQ following KRG visa reforms." },
+];
+
+function ScoreBar({ value, max, color }: { value: number; max: number; color: string }) {
+  return (
+    <div className="h-1.5 bg-secondary rounded-full overflow-hidden flex-1">
+      <div className={`h-full rounded-full ${color}`} style={{ width: `${(value / max) * 100}%` }} />
+    </div>
+  );
+}
 
 export default function MarketIntelligence() {
-  const [city, setCity] = useState<string>("Erbil");
-  const neighborhoods = useMemo(() => NEIGHBORHOODS[city] ?? [], [city]);
-  const outlook = CITY_OUTLOOK[city];
-  const signals = SIGNALS[city] ?? [];
+  const [city, setCity] = useState("Erbil");
+  const hoods = neighborhoodData[city] ?? [];
 
-  const handleCityChange = (c: string) => {
-    setCity(c);
-    trackMarketIntelView(c);
-  };
+  useEffect(() => { trackMarketIntelView(city, "overview"); }, [city]);
 
-  const signalColor = (t: string) =>
-    t === "bullish" ? "text-green-600 bg-green-500/10" : t === "bearish" ? "text-red-500 bg-red-500/10" : "text-yellow-500 bg-yellow-500/10";
+  const avgPrice = Math.round(hoods.reduce((s, n) => s + n.avgPrice, 0) / hoods.length);
+  const avgYield = (hoods.reduce((s, n) => s + n.rentalYield, 0) / hoods.length).toFixed(1);
+  const avgDemand = Math.round(hoods.reduce((s, n) => s + n.demandScore, 0) / hoods.length);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Market Intelligence</h1>
-        <p className="text-sm text-muted-foreground mt-1">Real-time market data and forecasts for Iraq's key cities</p>
+        <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-primary" /> Market Intelligence
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Demand heat maps, rental yields, and appreciation forecasts by city.
+        </p>
       </div>
 
-      {/* City selector */}
-      <div className="flex gap-2">
-        {CITIES.map((c) => (
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatsCard title="Avg $/m²"        value={`$${avgPrice}`}       change="+5.8% YoY" icon={DollarSign}  trend="up" />
+        <StatsCard title="Avg Rental Yield" value={`${avgYield}%`}       change="+0.4%"     icon={TrendingUp}  trend="up" />
+        <StatsCard title="Demand Index"     value={`${avgDemand}/100`}                      icon={Flame}       trend="up" />
+        <StatsCard title="Active Listings"  value={hoods.reduce((s, n) => s + n.daysOnMarket, 0)} icon={Building2} />
+      </div>
+
+      {/* City Picker */}
+      <div className="flex gap-2 flex-wrap">
+        {cities.map((c) => (
           <button
             key={c}
-            onClick={() => handleCityChange(c)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              city === c ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            onClick={() => setCity(c)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              city === c
+                ? "bg-primary text-white shadow-sm"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/70"
             }`}
           >
             {c}
@@ -101,108 +107,144 @@ export default function MarketIntelligence() {
         ))}
       </div>
 
-      <Tabs defaultValue="demand" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="demand">Demand & Yield</TabsTrigger>
-          <TabsTrigger value="forecasts">Forecasts</TabsTrigger>
-          <TabsTrigger value="signals">Market Signals</TabsTrigger>
+      <Tabs defaultValue="overview">
+        <TabsList className="bg-secondary rounded-xl p-1 h-auto">
+          <TabsTrigger value="overview"   className="rounded-lg text-xs">Demand & Yield</TabsTrigger>
+          <TabsTrigger value="forecasts"  className="rounded-lg text-xs">Forecasts</TabsTrigger>
+          <TabsTrigger value="signals"    className="rounded-lg text-xs">Market Signals</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="demand" className="space-y-4">
-          <div className="rounded-xl bg-card border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="p-3 font-medium">Neighborhood</th>
-                  <th className="p-3 font-medium text-center">Demand Score</th>
-                  <th className="p-3 font-medium text-center">Rental Yield</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...neighborhoods].sort((a, b) => b.demand - a.demand).map((n) => (
-                  <tr key={n.name} className="border-b border-border last:border-0">
-                    <td className="p-3 font-medium text-foreground">{n.name}</td>
-                    <td className="p-3 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
-                        n.demand >= 80 ? "bg-green-500/10 text-green-600" : n.demand >= 60 ? "bg-yellow-500/10 text-yellow-600" : "bg-red-500/10 text-red-500"
-                      }`}>
-                        {n.demand}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center font-medium text-foreground">{n.yield}%</td>
+        {/* ── Tab 1: Demand & Yield ── */}
+        <TabsContent value="overview" className="mt-4 space-y-4">
+          <div className="rounded-2xl bg-card border border-border overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="font-semibold text-foreground">Neighborhood Overview — {city}</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Sorted by demand score (highest first)</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/20">
+                    {["Neighborhood", "Avg $/m²", "Growth", "Rental Yield", "Demand", "Days on Market"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {[...hoods].sort((a, b) => b.demandScore - a.demandScore).map((n, i) => (
+                    <tr key={n.name} className="border-b border-border last:border-0 hover:bg-secondary/20 transition-colors">
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        <span className="text-[10px] text-muted-foreground mr-1.5">#{i + 1}</span>{n.name}
+                      </td>
+                      <td className="px-4 py-3 text-foreground">${n.avgPrice.toLocaleString()}</td>
+                      <td className="px-4 py-3 font-medium text-emerald-600 dark:text-emerald-400">+{n.priceChange}%</td>
+                      <td className="px-4 py-3 font-semibold text-primary">{n.rentalYield}%</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <ScoreBar
+                            value={n.demandScore} max={100}
+                            color={n.demandScore > 80 ? "bg-red-500" : n.demandScore > 60 ? "bg-amber-400" : "bg-emerald-400"}
+                          />
+                          <span className="text-xs font-semibold text-foreground w-7 text-right">{n.demandScore}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{n.daysOnMarket}d</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="rounded-xl bg-card border border-border p-5">
-            <h3 className="font-semibold text-foreground mb-3">Yield Ranking</h3>
-            <div className="space-y-2">
-              {[...neighborhoods].sort((a, b) => b.yield - a.yield).map((n) => (
+          {/* Yield ranking */}
+          <div className="rounded-2xl bg-card border border-border p-5">
+            <h2 className="font-semibold text-foreground mb-4">Rental Yield Ranking</h2>
+            <div className="space-y-3">
+              {[...hoods].sort((a, b) => b.rentalYield - a.rentalYield).map((n) => (
                 <div key={n.name} className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground w-32 shrink-0">{n.name}</span>
-                  <div className="flex-1 h-3 rounded-full bg-muted/30 overflow-hidden">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${(n.yield / 12) * 100}%` }} />
-                  </div>
-                  <span className="text-sm font-medium text-foreground w-12 text-right">{n.yield}%</span>
+                  <span className="text-sm font-medium text-foreground w-28 shrink-0">{n.name}</span>
+                  <ScoreBar value={n.rentalYield} max={12} color="bg-primary" />
+                  <span className="text-sm font-bold text-primary w-12 text-right">{n.rentalYield}%</span>
                 </div>
               ))}
             </div>
           </div>
         </TabsContent>
 
-        <TabsContent value="forecasts" className="space-y-4">
-          <div className="rounded-xl bg-card border border-border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-muted-foreground">
-                  <th className="p-3 font-medium">Neighborhood</th>
-                  <th className="p-3 font-medium text-center">12-Month Forecast</th>
-                </tr>
-              </thead>
-              <tbody>
-                {neighborhoods.map((n) => (
-                  <tr key={n.name} className="border-b border-border last:border-0">
-                    <td className="p-3 font-medium text-foreground">{n.name}</td>
-                    <td className="p-3 text-center">
-                      <span className="text-green-600 font-medium">+{n.forecast12m}%</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* ── Tab 2: Forecasts ── */}
+        <TabsContent value="forecasts" className="mt-4 space-y-4">
+          {/* Per-neighborhood */}
+          <div className="rounded-2xl bg-card border border-border overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="font-semibold text-foreground">12-Month Price Forecasts — {city}</h2>
+            </div>
+            <div className="divide-y divide-border">
+              {[...hoods].sort((a, b) => b.forecast1yr - a.forecast1yr).map((n) => (
+                <div key={n.name} className="flex items-center justify-between px-5 py-3.5">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{n.name}</p>
+                    <p className="text-xs text-muted-foreground">Current avg: ${n.avgPrice.toLocaleString()}/m²</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    +{n.forecast1yr}%
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {outlook && (
-            <div className="rounded-xl bg-card border border-border p-5">
-              <h3 className="font-semibold text-foreground mb-3">{city} — Long-Term Outlook</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { label: "1 Year", value: outlook.yr1 },
-                  { label: "3 Years", value: outlook.yr3 },
-                  { label: "5 Years", value: outlook.yr5 },
-                ].map((f) => (
-                  <div key={f.label} className="rounded-lg bg-secondary p-4 text-center">
-                    <p className="text-xs text-muted-foreground">{f.label}</p>
-                    <p className="text-xl font-bold text-green-600">+{f.value}%</p>
+          {/* City 5-year outlook */}
+          <div className="rounded-2xl bg-card border border-border p-5">
+            <h2 className="font-semibold text-foreground mb-4">5-Year City Outlook</h2>
+            <div className="space-y-4">
+              {cityForecasts.map((cf) => (
+                <div key={cf.city} className="rounded-xl bg-secondary/30 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-semibold text-foreground">{cf.city}</p>
+                    <span className={`text-xs font-bold ${cf.color}`}>{cf.trend}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[["1 Year", cf.y1], ["3 Years", cf.y3], ["5 Years", cf.y5]].map(([label, val]) => (
+                      <div key={label as string} className="rounded-lg bg-card border border-border p-2 text-center">
+                        <p className="text-[10px] text-muted-foreground">{label}</p>
+                        <p className={`text-sm font-bold mt-0.5 ${cf.color}`}>+{val}%</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="signals" className="space-y-3">
-          {signals.map((s, i) => (
-            <div key={i} className={`rounded-xl border border-border p-4 flex items-start gap-3 ${signalColor(s.type)}`}>
-              <span className="text-lg mt-0.5">{s.type === "bullish" ? "📈" : s.type === "bearish" ? "📉" : "📊"}</span>
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider">{s.type}</span>
-                <p className="text-sm text-foreground mt-1">{s.text}</p>
-              </div>
-            </div>
-          ))}
+        {/* ── Tab 3: Market Signals ── */}
+        <TabsContent value="signals" className="mt-4">
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Live intelligence signals across all markets.</p>
+            {marketSignals.map((s, i) => {
+              const isUp = s.type === "bullish";
+              const isDown = s.type === "bearish";
+              return (
+                <div
+                  key={i}
+                  className={`rounded-2xl border p-4 flex gap-3 ${
+                    isUp   ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20" :
+                    isDown ? "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20" :
+                    "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20"
+                  }`}
+                >
+                  <span className="text-xl shrink-0">{isUp ? "📈" : isDown ? "📉" : "⚠️"}</span>
+                  <div>
+                    <p className={`text-sm font-semibold ${isUp ? "text-emerald-700 dark:text-emerald-400" : isDown ? "text-red-700 dark:text-red-400" : "text-amber-700 dark:text-amber-400"}`}>
+                      {s.headline}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{s.detail}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

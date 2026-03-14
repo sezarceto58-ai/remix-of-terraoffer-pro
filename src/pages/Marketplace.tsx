@@ -1,21 +1,16 @@
-import { useState } from "react";
-import { Search, SlidersHorizontal, MapPin, Loader2, List, Map as MapIcon } from "lucide-react";
+import { Suspense, lazy, useState } from "react";
+import { Search, SlidersHorizontal, MapPin, Loader2, Map as MapIcon, LayoutGrid } from "lucide-react";
 import PropertyCard from "@/components/PropertyCard";
-import PropertyCardSkeleton from "@/components/skeletons/PropertyCardSkeleton";
-import EmptyState from "@/components/EmptyState";
 import { useProperties } from "@/hooks/useProperties";
 import heroImg from "@/assets/hero-property.jpg";
-import type { DbProperty } from "@/types/database";
 
-// Lazy-load map to avoid SSR issues
-import { lazy, Suspense } from "react";
 const MarketplaceMap = lazy(() => import("@/components/MarketplaceMap"));
 
 export default function Marketplace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("all");
   const [selectedType, setSelectedType] = useState("all");
-  const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "map">("grid");
 
   const { data: properties = [], isLoading } = useProperties({ city: selectedCity, type: selectedType, search: searchQuery });
 
@@ -49,46 +44,45 @@ export default function Marketplace() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">{properties.length}</span> properties found</p>
           <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:text-foreground"}`}
-              >
-                <List className="w-3 h-3" /> List
-              </button>
-              <button
-                onClick={() => setViewMode("map")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "map" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:text-foreground"}`}
-              >
-                <MapIcon className="w-3 h-3" /> Map
-              </button>
-            </div>
             <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
               <SlidersHorizontal className="w-3 h-3" /> Filters
             </button>
+            <div className="rounded-lg border border-border bg-card p-1 flex">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setViewMode("map")}
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <MapIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {viewMode === "map" ? (
+        {isLoading ? (
+          <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+        ) : viewMode === "map" ? (
           <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
-            <MarketplaceMap properties={properties} isLoading={isLoading} />
+            <MarketplaceMap properties={properties} />
           </Suspense>
-        ) : isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {Array.from({ length: 8 }).map((_, i) => <PropertyCardSkeleton key={i} />)}
-          </div>
-        ) : properties.length === 0 ? (
-          <EmptyState
-            icon={MapPin}
-            title="No properties found"
-            description="Try adjusting your filters or search query."
-          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {properties.map((property) => <PropertyCard key={property.id} property={property} />)}
+          </div>
+        )}
+
+        {!isLoading && properties.length === 0 && (
+          <div className="text-center py-20">
+            <MapPin className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
+            <p className="text-muted-foreground">No properties match your search.</p>
           </div>
         )}
       </div>

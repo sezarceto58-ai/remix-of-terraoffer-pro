@@ -15,7 +15,9 @@ import {
   Crown,
   Loader2,
   ExternalLink,
+  ShieldCheck,
 } from "lucide-react";
+import RoleSwitcher from "@/components/settings/RoleSwitcher";
 
 export default function Settings() {
   const [searchParams] = useSearchParams();
@@ -27,6 +29,7 @@ export default function Settings() {
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
+    { id: "role", label: "Role", icon: ShieldCheck },
     { id: "billing", label: "Billing & Plans", icon: CreditCard },
     { id: "security", label: "Security", icon: Shield },
   ];
@@ -55,6 +58,7 @@ export default function Settings() {
       </div>
 
       {activeTab === "profile" && <ProfileTab user={user} toast={toast} />}
+      {activeTab === "role" && <RoleSwitcher />}
       {activeTab === "billing" && (
         <BillingTab
           tier={tier}
@@ -151,7 +155,7 @@ function BillingTab({
     if (key === "free") return;
     setSubscribing(key);
     try {
-      await subscribe(TIERS[key].price_id);
+      await subscribe(TIERS[key].monthly.price_id);
     } catch (err: any) {
       toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
     } finally {
@@ -233,7 +237,7 @@ function BillingTab({
 
               <h3 className="text-lg font-display font-bold text-foreground">{plan.name}</h3>
               <div className="mt-2 mb-4">
-                <span className="text-3xl font-bold text-foreground">${plan.price}</span>
+                <span className="text-3xl font-bold text-foreground">${plan.monthly.price}</span>
                 <span className="text-muted-foreground text-sm">/month</span>
               </div>
 
