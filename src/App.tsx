@@ -32,6 +32,7 @@ import SellerAnalytics from "@/pages/SellerAnalytics";
 import CreateProperty from "@/pages/CreateProperty";
 import AgentCRM from "@/pages/AgentCRM";
 import SellerAIAssistant from "@/pages/SellerAIAssistant";
+import SellerVerification from "@/pages/SellerVerification";
 
 // Developer pages
 import DeveloperDashboard from "@/pages/DeveloperDashboard";
@@ -46,7 +47,9 @@ import PortfolioInsights from "@/pages/PortfolioInsights";
 // Shared pages
 import Messaging from "@/pages/Messaging";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminVerificationReview from "@/pages/AdminVerificationReview";
 import Settings from "@/pages/Settings";
+import Profile from "@/pages/Profile";
 import Pricing from "@/pages/Pricing";
 import NotFound from "./pages/NotFound";
 
@@ -62,12 +65,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+          {/* Public routes (no layout) */}
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-
-          {/* Buyer / Investor */}
+          {/* Protected routes with layout */}
           <Route
             path="/buyer/*"
             element={
@@ -96,7 +98,6 @@ const App = () => (
 
           <Route path="/property/:id" element={<Layout><PropertyDetail /></Layout>} />
 
-          {/* Seller / Agent */}
           <Route
             path="/seller/*"
             element={
@@ -112,6 +113,7 @@ const App = () => (
                       <Route path="/messages" element={<Messaging />} />
                       <Route path="/analytics" element={<SellerAnalytics />} />
                       <Route path="/ai-assistant" element={<SellerAIAssistant />} />
+                      <Route path="/verification" element={<SellerVerification />} />
                       <Route path="/investor" element={<InvestorTools />} />
                     </Routes>
                   </Layout>
@@ -120,7 +122,6 @@ const App = () => (
             }
           />
 
-          {/* Developer */}
           <Route
             path="/developer/*"
             element={
@@ -144,10 +145,15 @@ const App = () => (
             }
           />
 
-          <Route path="/admin" element={
+          <Route path="/admin/*" element={
             <RequireAuth>
               <RequireRole allow={"admin"}>
-                <Layout><AdminDashboard /></Layout>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<AdminDashboard />} />
+                    <Route path="/verifications" element={<AdminVerificationReview />} />
+                  </Routes>
+                </Layout>
               </RequireRole>
             </RequireAuth>
           } />
@@ -155,6 +161,11 @@ const App = () => (
           <Route path="/settings" element={
             <RequireAuth>
               <Layout><Settings /></Layout>
+            </RequireAuth>
+          } />
+          <Route path="/profile" element={
+            <RequireAuth>
+              <Layout><Profile /></Layout>
             </RequireAuth>
           } />
           <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
