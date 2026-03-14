@@ -1,27 +1,27 @@
-import { type LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+import { LucideIcon } from "lucide-react";
 
 interface EmptyStateProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  actionLabel?: string;
-  onAction?: () => void;
+  action?: React.ReactNode;
 }
 
-export default function EmptyState({ icon: Icon, title, description, actionLabel, onAction }: EmptyStateProps) {
+export default function EmptyState({ icon: Icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-6 rounded-xl bg-card border border-border text-center">
-      <div className="p-4 rounded-2xl bg-muted mb-4">
-        <Icon className="w-10 h-10 text-muted-foreground/50" />
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className="rounded-2xl bg-card border border-border p-10 text-center"
+    >
+      <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <Icon className="w-8 h-8 text-primary/60" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
-      <p className="text-sm text-muted-foreground max-w-sm">{description}</p>
-      {actionLabel && onAction && (
-        <Button onClick={onAction} className="mt-6 bg-gradient-gold text-primary-foreground shadow-gold hover:opacity-90">
-          {actionLabel}
-        </Button>
-      )}
-    </div>
+      <h3 className="text-lg font-display font-semibold text-foreground mb-1">{title}</h3>
+      <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">{description}</p>
+      {action}
+    </motion.div>
   );
 }

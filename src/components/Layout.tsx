@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
@@ -21,87 +22,104 @@ import {
   Settings,
   CreditCard,
   Briefcase,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useOnboarding } from "@/hooks/useOnboarding";
-import Onboarding from "@/components/Onboarding";
-import MobileBottomNav from "@/components/MobileBottomNav";
+import LanguageToggle from "@/components/LanguageToggle";
+import NotificationBell from "@/components/NotificationBell";
+import PageTransition from "@/components/PageTransition";
 
-const buyerNav = [
-  { label: "Home", items: [{ path: "/buyer", icon: LayoutDashboard, label: "Dashboard" }] },
-  { label: "Marketplace", items: [
-    { path: "/buyer/discover", icon: Search, label: "Discover" },
-    { path: "/buyer/compare", icon: GitCompareArrows, label: "Compare" },
-    { path: "/buyer/favorites", icon: Heart, label: "Favorites" },
-    { path: "/buyer/alerts", icon: Bell, label: "Alerts" },
+const buyerNav = (t: any) => [
+  { label: t("nav.home"), items: [
+    { path: "/buyer", icon: LayoutDashboard, label: t("nav.dashboard") },
   ]},
-  { label: "Offers & Deals", items: [
-    { path: "/buyer/offers", icon: BadgeDollarSign, label: "My Offers" },
-    { path: "/buyer/syndication", icon: Briefcase, label: "Syndication" },
-    { path: "/buyer/messages", icon: MessageSquare, label: "Messages" },
+  { label: t("nav.marketplace"), items: [
+    { path: "/buyer/discover", icon: Search, label: t("nav.discover") },
+    { path: "/buyer/compare", icon: GitCompareArrows, label: t("nav.compare") },
+    { path: "/buyer/favorites", icon: Heart, label: t("nav.favorites") },
+    { path: "/buyer/alerts", icon: Bell, label: t("nav.alerts") },
   ]},
-  { label: "Intelligence", items: [
-    { path: "/buyer/investor", icon: TrendingUp, label: "AI Portfolio" },
-    { path: "/buyer/market-intelligence", icon: BarChart3, label: "Market Intel" },
+  { label: t("nav.offersDeals"), items: [
+    { path: "/buyer/offers", icon: BadgeDollarSign, label: t("nav.myOffers") },
+    { path: "/buyer/messages", icon: MessageSquare, label: t("common.messages") },
+  ]},
+  { label: t("nav.investorTools"), items: [
+    { path: "/buyer/investor", icon: TrendingUp, label: t("nav.aiIntelligence") },
+    { path: "/buyer/market-intelligence", icon: BarChart3, label: "Market Intelligence" },
+    { path: "/buyer/syndication", icon: Users, label: "Syndication Deals" },
   ]},
 ];
 
-const sellerNav = [
-  { label: "Home", items: [{ path: "/seller", icon: LayoutDashboard, label: "Dashboard" }] },
-  { label: "Listings", items: [
-    { path: "/seller/listings", icon: Building2, label: "My Listings" },
-    { path: "/seller/create", icon: Plus, label: "New Listing + AI" },
+
+const sellerNav = (t: any) => [
+  { label: t("nav.home"), items: [
+    { path: "/seller", icon: LayoutDashboard, label: t("nav.dashboard") },
   ]},
-  { label: "Sales Pipeline", items: [
-    { path: "/seller/offers", icon: BadgeDollarSign, label: "Offer Inbox" },
-    { path: "/seller/crm", icon: Users, label: "CRM & Leads" },
-    { path: "/seller/messages", icon: MessageSquare, label: "Messages" },
+  { label: t("nav.listings"), items: [
+    { path: "/seller/listings", icon: Building2, label: t("nav.myListings") },
+    { path: "/seller/create", icon: Plus, label: t("nav.newListing") },
   ]},
-  { label: "Performance", items: [
-    { path: "/seller/analytics", icon: BarChart3, label: "Analytics" },
+  { label: t("nav.salesPipeline"), items: [
+    { path: "/seller/offers", icon: BadgeDollarSign, label: t("nav.offerInbox") },
+    { path: "/seller/crm", icon: Users, label: t("nav.crmLeads") },
+    { path: "/seller/messages", icon: MessageSquare, label: t("common.messages") },
   ]},
-  { label: "AI Tools", items: [
-    { path: "/seller/investor", icon: TrendingUp, label: "Investor Intelligence" },
+  { label: t("nav.performance"), items: [
+    { path: "/seller/analytics", icon: BarChart3, label: t("nav.analytics") },
+    { path: "/seller/verification", icon: Shield, label: t("nav.verification") },
+  ]},
+  { label: t("nav.aiTools"), items: [
+    { path: "/seller/investor", icon: TrendingUp, label: t("nav.investorIntelligence") },
+    { path: "/buyer/market-intelligence", icon: BarChart3, label: "Market Intelligence" },
   ]},
 ];
 
-const developerNav = [
-  { label: "Home", items: [{ path: "/developer", icon: LayoutDashboard, label: "Dashboard" }] },
-  { label: "Opportunities", items: [
-    { path: "/developer/opportunities", icon: Briefcase, label: "Opportunity Feed" },
-    { path: "/developer/portfolio", icon: TrendingUp, label: "Portfolio Insights" },
+
+const developerNav = (t: any) => [
+  { label: t("nav.home"), items: [
+    { path: "/developer", icon: LayoutDashboard, label: t("nav.dashboard") },
   ]},
-  { label: "Planning", items: [
-    { path: "/developer/analyze", icon: Search, label: "Analyze Land" },
-    { path: "/developer/plans", icon: Building2, label: "All Plans" },
+  { label: t("nav.opportunities"), items: [
+    { path: "/developer/opportunities", icon: Briefcase, label: t("nav.opportunityFeed") },
+    { path: "/developer/portfolio", icon: TrendingUp, label: t("nav.portfolioInsights") },
   ]},
-  { label: "Tools", items: [
-    { path: "/developer/messages", icon: MessageSquare, label: "Messages" },
+  { label: t("nav.planning"), items: [
+    { path: "/developer/analyze", icon: Search, label: t("nav.analyzeLand") },
+    { path: "/developer/plans", icon: Building2, label: t("nav.allPlans") },
+  ]},
+  { label: t("nav.tools"), items: [
+    { path: "/developer/messages", icon: MessageSquare, label: t("common.messages") },
+    { path: "/buyer/market-intelligence", icon: BarChart3, label: "Market Intelligence" },
+    { path: "/buyer/syndication", icon: Users, label: "Syndication Deals" },
   ]},
 ];
 
-const adminNav = [
-  { label: "Governance", items: [{ path: "/admin", icon: Shield, label: "Console" }] },
+const adminNav = (t: any) => [
+  { label: t("nav.governance"), items: [
+    { path: "/admin", icon: Shield, label: t("nav.console") },
+    { path: "/admin/verifications", icon: Shield, label: t("nav.sellerVerifications") },
+  ]},
 ];
 
-function getNavForPath(pathname: string) {
-  if (pathname.startsWith("/developer")) return developerNav;
-  if (pathname.startsWith("/seller")) return sellerNav;
-  if (pathname.startsWith("/admin")) return adminNav;
-  return buyerNav;
+
+function getNavForPath(pathname: string, t: any) {
+  if (pathname.startsWith("/developer")) return developerNav(t);
+  if (pathname.startsWith("/seller")) return sellerNav(t);
+  if (pathname.startsWith("/admin")) return adminNav(t);
+  return buyerNav(t);
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout({ children }: {children: React.ReactNode;}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { showOnboarding, completeOnboarding } = useOnboarding();
+  const { t } = useTranslation();
 
-  const nav = getNavForPath(location.pathname);
-  const initials = user?.user_metadata?.display_name
-    ? user.user_metadata.display_name.slice(0, 2).toUpperCase()
-    : user?.email?.slice(0, 2).toUpperCase() ?? "TV";
+  const nav = getNavForPath(location.pathname, t);
+  const initials = user?.user_metadata?.display_name ?
+  user.user_metadata.display_name.slice(0, 2).toUpperCase() :
+  user?.email?.slice(0, 2).toUpperCase() ?? "TV";
 
   const handleSignOut = async () => {
     await signOut();
@@ -110,19 +128,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      {sidebarOpen &&
+      <div
+        className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+        onClick={() => setSidebarOpen(false)} />
 
-      {/* Sidebar — hidden on mobile */}
+      }
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 hidden lg:block lg:static lg:translate-x-0 ${
-          sidebarOpen ? "!block translate-x-0" : "-translate-x-full"
-        }`}
-      >
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 lg:translate-x-0 lg:static ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"}`
+        }>
+
         <div className="flex items-center justify-between p-5 border-b border-sidebar-border text-secondary">
           <Link to="/buyer" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-gold flex items-center justify-center">
@@ -136,36 +153,37 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <nav className="p-3 space-y-6 overflow-y-auto h-[calc(100vh-200px)]">
-          {nav.map((section) => (
-            <div key={section.label}>
+          {nav.map((section) =>
+          <div key={section.label}>
               <p className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
                 {section.label}
               </p>
               <div className="space-y-0.5">
                 {section.items.map((item) => {
-                  const isActive = location.pathname === item.path;
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      }`}
-                    >
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    isActive ?
+                    "bg-primary/10 text-primary" :
+                    "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`
+                    }>
+
                       <item.icon className="w-4 h-4" />
                       {item.label}
                       {isActive && <ChevronRight className="w-3 h-3 ml-auto" />}
-                    </Link>
-                  );
-                })}
+                    </Link>);
+
+              })}
               </div>
             </div>
-          ))}
+          )}
         </nav>
 
+        {/* Account links */}
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border space-y-0.5">
           <Link
             to="/pricing"
@@ -173,7 +191,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
           >
             <CreditCard className="w-4 h-4" />
-            Plans & Pricing
+            {t("common.pricing")}
+          </Link>
+          <Link
+            to="/profile"
+            onClick={() => setSidebarOpen(false)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+          >
+            <User className="w-4 h-4" />
+            Profile
           </Link>
           <Link
             to="/settings"
@@ -181,14 +207,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
           >
             <Settings className="w-4 h-4" />
-            Settings
+            {t("common.settings")}
           </Link>
           <button
             onClick={handleSignOut}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            {t("common.signOut")}
           </button>
         </div>
       </aside>
@@ -200,26 +226,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-secondary text-muted-foreground transition-colors">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse-gold" />
-            </button>
+            <LanguageToggle />
+            <NotificationBell />
             <div className="w-8 h-8 rounded-full bg-gradient-gold flex items-center justify-center text-xs font-bold text-primary-foreground">
               {initials}
             </div>
           </div>
         </header>
 
-        <div className="p-4 lg:p-6 pb-20 lg:pb-6">{children}</div>
+        <div className="p-4 lg:p-6"><PageTransition>{children}</PageTransition></div>
       </main>
+    </div>);
 
-      {/* Mobile bottom nav */}
-      <MobileBottomNav />
-
-      {/* Onboarding wizard */}
-      {showOnboarding && (
-        <Onboarding open={showOnboarding} onComplete={completeOnboarding} />
-      )}
-    </div>
-  );
 }
