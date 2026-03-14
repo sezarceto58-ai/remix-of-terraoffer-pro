@@ -48,6 +48,8 @@ import PortfolioInsights from "@/pages/PortfolioInsights";
 import Messaging from "@/pages/Messaging";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminVerificationReview from "@/pages/AdminVerificationReview";
+import AdminSupport from "@/pages/AdminSupport";
+import Support from "@/pages/Support";
 import Settings from "@/pages/Settings";
 import Profile from "@/pages/Profile";
 import Pricing from "@/pages/Pricing";
@@ -152,6 +154,7 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<AdminDashboard />} />
                     <Route path="/verifications" element={<AdminVerificationReview />} />
+                    <Route path="/support" element={<AdminSupport />} />
                   </Routes>
                 </Layout>
               </RequireRole>
@@ -166,6 +169,11 @@ const App = () => (
           <Route path="/profile" element={
             <RequireAuth>
               <Layout><Profile /></Layout>
+            </RequireAuth>
+          } />
+          <Route path="/support" element={
+            <RequireAuth>
+              <Layout><Support /></Layout>
             </RequireAuth>
           } />
           <Route path="/pricing" element={<Layout><Pricing /></Layout>} />
