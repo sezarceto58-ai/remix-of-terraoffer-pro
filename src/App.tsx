@@ -117,6 +117,9 @@ const App = () => (
                       <Route path="/ai-assistant" element={<SellerAIAssistant />} />
                       <Route path="/verification" element={<SellerVerification />} />
                       <Route path="/investor" element={<InvestorTools />} />
+                      <Route path="/market-intelligence" element={<MarketIntelligence />} />
+                      <Route path="/syndication" element={<SyndicationDeals />} />
+                      <Route path="/syndication/:id" element={<SyndicationDealDetail />} />
                     </Routes>
                   </Layout>
                 </RequireRole>
@@ -140,6 +143,9 @@ const App = () => (
                       <Route path="/opportunities/:id" element={<OpportunityWorkspace />} />
                       <Route path="/portfolio" element={<PortfolioInsights />} />
                       <Route path="/messages" element={<Messaging />} />
+                      <Route path="/market-intelligence" element={<MarketIntelligence />} />
+                      <Route path="/syndication" element={<SyndicationDeals />} />
+                      <Route path="/syndication/:id" element={<SyndicationDealDetail />} />
                     </Routes>
                   </Layout>
                 </RequireRole>
